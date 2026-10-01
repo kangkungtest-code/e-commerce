@@ -71,6 +71,7 @@ class TampilanOrder
                 'label' => self::labelStatus($h->ke),
                 'waktu' => $h->created_at->timezone(config('toko.zona_waktu'))->locale(str_replace('_', '-', $locale))->isoFormat('D MMM YYYY, HH:mm'),
             ])->all(),
+            'pembayaran' => TampilanPembayaran::untuk($o),
             'bisa_retur' => TampilanRetur::bisaDiajukan($o),
             'batas_retur_hari' => config('toko.retur.batas_hari'),
             'retur' => ($r = $o->returnRequests()->latest()->first()) ? [

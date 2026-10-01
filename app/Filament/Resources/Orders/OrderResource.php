@@ -160,6 +160,28 @@ class OrderResource extends Resource
                             ->extraAttributes(['style' => 'white-space: pre-line']),
                     ]),
 
+                Section::make('Pembayaran online')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Order $o) => $o->payments()->exists())
+                    ->schema([
+                        RepeatableEntry::make('payments')
+                            ->hiddenLabel()
+                            ->columns(5)
+                            ->schema([
+                                TextEntry::make('gateway')->label('Metode')
+                                    ->formatStateUsing(fn (string $state, $record) => \App\Payments\MetodePembayaran::label($state).(($record->data_bayar['bank'] ?? null) ? ' '.$record->data_bayar['bank'] : '')),
+                                TextEntry::make('status')->badge()
+                                    ->color(fn (string $state) => match ($state) { 'berhasil' => 'success', 'pending' => 'warning', 'direfund' => 'info', default => 'gray' }),
+                                TextEntry::make('jumlah')->label('Jumlah')
+                                    ->formatStateUsing(fn ($state, $record) => app(Kurs::class)->formatNilai((float) $state, $record->mata_uang)),
+                                TextEntry::make('transaksi_id_eksternal')->label('ID gateway')->placeholder('—')->copyable(),
+                                TextEntry::make('dibayar_pada')->label('Dibayar')->dateTime('d M Y H:i', config('toko.zona_waktu'))->placeholder('—'),
+                                TextEntry::make('catatan')->label('Catatan')->placeholder('—')->columnSpanFull()
+                                    ->visible(fn ($record) => filled($record?->catatan)),
+                            ]),
+                    ]),
+
                 Section::make('Riwayat status')
                     ->columnSpanFull()
                     ->collapsible()

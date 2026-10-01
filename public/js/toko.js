@@ -183,3 +183,27 @@
     panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') setBuka(false); });
     form.addEventListener('submit', (e) => { e.preventDefault(); kirim(input.value); });
 })();
+
+// Pembayaran: salin nomor VA & cek status otomatis sampai pembayaran masuk.
+(() => {
+    document.querySelectorAll('[data-salin]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const isi = btn.parentElement.querySelector('[data-salin-isi]').textContent.trim();
+            try { await navigator.clipboard.writeText(isi); btn.textContent = btn.dataset.tTersalin; } catch { /* abaikan */ }
+        });
+    });
+
+    const blok = document.querySelector('[data-cek-status]');
+    if (!blok) return;
+    const awal = blok.dataset.statusAwal;
+    let percobaan = 0;
+    const cek = async () => {
+        percobaan += 1;
+        try {
+            const res = await fetch(blok.dataset.cekStatus, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+            if (res.ok && (await res.json()).status !== awal) { window.location.reload(); return; }
+        } catch { /* coba lagi nanti */ }
+        if (percobaan < 120) setTimeout(cek, percobaan < 30 ? 5000 : 15000);
+    };
+    setTimeout(cek, 5000);
+})();

@@ -9,7 +9,9 @@ use App\Http\Controllers\Toko\ChatbotController;
 use App\Http\Controllers\Toko\CheckoutController;
 use App\Http\Controllers\Toko\KatalogController;
 use App\Http\Controllers\Toko\KeranjangController;
+use App\Http\Controllers\Toko\PembayaranController;
 use App\Http\Controllers\Toko\PesananController;
+use App\Http\Controllers\WebhookPembayaranController;
 use App\Http\Controllers\Toko\PreferensiController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,8 +68,16 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/akun/pesanan/{order}', [PesananController::class, 'show'])->name('akun.pesanan.show');
     Route::post('/akun/pesanan/{order}/batal', [PesananController::class, 'batal'])->name('akun.pesanan.batal');
     Route::post('/akun/pesanan/{order}/retur', [PesananController::class, 'ajukanRetur'])->middleware('throttle:5,1')->name('akun.pesanan.retur');
+    Route::post('/akun/pesanan/{order}/bayar', [PembayaranController::class, 'bayar'])->middleware('throttle:10,1')->name('akun.pesanan.bayar');
+    Route::get('/akun/pesanan/{order}/status', [PembayaranController::class, 'status'])->middleware('throttle:30,1')->name('akun.pesanan.status');
+    Route::get('/bayar/paypal/{payment}/kembali', [PembayaranController::class, 'paypalKembali'])->name('bayar.paypal.kembali');
+    Route::get('/bayar/paypal/{payment}/batal', [PembayaranController::class, 'paypalBatal'])->name('bayar.paypal.batal');
     Route::put('/akun/retur/{retur}/resi', [PesananController::class, 'resiRetur'])->name('akun.retur.resi');
 
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1');
 });
+
+// Webhook payment gateway (tanpa CSRF & sesi; diverifikasi per gateway).
+Route::post('/webhook/paypal', [WebhookPembayaranController::class, 'paypal'])->middleware('throttle:120,1')->name('webhook.paypal');
+Route::post('/webhook/xendit', [WebhookPembayaranController::class, 'xendit'])->middleware('throttle:120,1')->name('webhook.xendit');

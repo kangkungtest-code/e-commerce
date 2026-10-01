@@ -15,6 +15,10 @@ class LepasReservasiAction
 {
     public function execute(Order $order): void
     {
+        // Tagihan yang belum dibayar ikut ditutup supaya tidak bisa dibayar lagi.
+        $order->payments()->where('status', \App\Models\Payment::PENDING)
+            ->update(['status' => \App\Models\Payment::KADALUARSA, 'catatan' => 'Order batal / kadaluarsa']);
+
         $lokasi = StockLocation::default();
 
         foreach ($order->items()->orderBy('variant_id')->get() as $item) {

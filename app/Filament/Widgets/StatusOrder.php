@@ -7,7 +7,7 @@ use App\Support\Laporan;
 
 class StatusOrder extends GrafikDasar
 {
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 6;
 
     protected ?string $heading = 'Status order (dibuat di periode ini)';
 

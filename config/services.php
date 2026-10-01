@@ -46,4 +46,18 @@ return [
         'client_secret' => env('LINE_CHANNEL_SECRET'),
     ],
 
+    // Pembayaran. Gateway hanya aktif kalau kuncinya diisi (lihat App\Payments).
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+        'mode' => env('PAYPAL_MODE', 'sandbox'), // sandbox / live
+    ],
+
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'callback_token' => env('XENDIT_CALLBACK_TOKEN'),
+        'va_banks' => ['BCA', 'BNI', 'BRI', 'MANDIRI', 'PERMATA'],
+    ],
+
 ];

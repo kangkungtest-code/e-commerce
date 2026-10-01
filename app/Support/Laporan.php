@@ -102,4 +102,17 @@ class Laporan
             ->get(['status'])
             ->countBy('status');
     }
+
+    /** @return Collection<string, float> metode bayar => penjualan IDR (order terbayar di periode ini) */
+    public function perMetodeBayar(): Collection
+    {
+        return $this->orderTerbayar()
+            ->with(['payments' => fn ($q) => $q->whereIn('status', [\App\Models\Payment::BERHASIL, \App\Models\Payment::DIREFUND])])
+            ->get(['id', 'total_idr'])
+            ->groupBy(fn (Order $o) => ($p = $o->payments->first())
+                ? \App\Payments\MetodePembayaran::label($p->gateway)
+                : 'Konfirmasi manual')
+            ->map(fn ($g) => (float) $g->sum('total_idr'))
+            ->sortDesc();
+    }
 }

@@ -12,11 +12,7 @@
         <div class="dua-kolom">
             <div>
                 @if ($o['menunggu'])
-                    <section class="blok blok-sorot">
-                        <h2>{{ __('Pay :total by :deadline', ['total' => $o['total'], 'deadline' => $o['batas_bayar']]) }}</h2>
-                        <p>{{ __('Your items are held until then. If the order isn\'t paid in time it is cancelled automatically.') }}</p>
-                        <button type="button" class="tombol" disabled>{{ __('Online payment opens soon') }}</button>
-                    </section>
+                    @include('toko.akun._pembayaran', ['o' => $o, 'b' => $o['pembayaran']])
                 @endif
 
                 <section class="blok">

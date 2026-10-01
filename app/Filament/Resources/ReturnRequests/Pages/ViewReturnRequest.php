@@ -64,8 +64,19 @@ class ViewReturnRequest extends ViewRecord
                     ])->required(),
                     Textarea::make('catatan')->label('Catatan untuk pembeli (opsional)'),
                 ])
-                ->modalDescription('Refund otomatis lewat payment gateway belum tersedia; untuk sementara lakukan refund manual.')
-                ->action(fn (array $data) => $this->jalankan(fn ($p) => $p->selesaikan($this->getRecord(), $data['penyelesaian'], $data['catatan'] ?? null), 'Retur selesai')),
+                ->modalDescription('Kalau dipilih refund, sistem mencoba refund penuh lewat payment gateway (PayPal / QRIS). Virtual Account dan pembayaran manual perlu direfund manual.')
+                ->action(function (array $data) {
+                    $this->jalankan(fn ($p) => $p->selesaikan($this->getRecord(), $data['penyelesaian'], $data['catatan'] ?? null), 'Retur selesai');
+
+                    if ($data['penyelesaian'] === 'refund' && $this->getRecord()->status === ReturnRequest::STATUS_SELESAI) {
+                        try {
+                            $pay = app(\App\Actions\Pembayaran\RefundPembayaranAction::class)->execute($this->getRecord()->order, 'Retur: '.$this->getRecord()->alasan);
+                            Notification::make()->success()->title('Refund diproses')->body("ID refund: {$pay->refund_id}")->send();
+                        } catch (TokoException $e) {
+                            Notification::make()->warning()->title('Refund manual diperlukan')->body($e->getMessage())->persistent()->send();
+                        }
+                    }
+                }),
         ];
     }
 }
