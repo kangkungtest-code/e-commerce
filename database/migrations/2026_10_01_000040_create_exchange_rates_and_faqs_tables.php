@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamp('berlaku_dari');
             $table->timestamps();
 
-            $table->index(['mata_uang_asal', 'mata_uang_tujuan', 'berlaku_dari']);
+            $table->index(['mata_uang_asal', 'mata_uang_tujuan', 'berlaku_dari'], 'exchange_rates_pair_berlaku_index');
         });
 
         Schema::create('faqs', function (Blueprint $table) {
