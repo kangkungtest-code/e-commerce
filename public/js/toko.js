@@ -74,3 +74,112 @@
         render();
     });
 })();
+
+// Chatbot: jawaban otomatis dari server, tombol WA/LINE kalau perlu admin.
+(() => {
+    const root = document.querySelector('[data-chat]');
+    if (!root) return;
+
+    const buka = root.querySelector('[data-chat-buka]');
+    const panel = root.querySelector('.chat-panel');
+    const isi = root.querySelector('[data-chat-isi]');
+    const saran = root.querySelector('[data-chat-saran]');
+    const form = root.querySelector('[data-chat-form]');
+    const input = form.querySelector('input');
+    const csrf = document.querySelector('form [name="_token"]')?.value;
+    let dimulai = false;
+
+    const tautkan = (teks) => {
+        const frag = document.createDocumentFragment();
+        teks.split(/(https?:\/\/\S+)/g).forEach((bagian, i) => {
+            if (i % 2) {
+                const a = document.createElement('a');
+                a.href = bagian; a.textContent = bagian; a.target = '_blank'; a.rel = 'noopener';
+                frag.append(a);
+            } else {
+                frag.append(bagian);
+            }
+        });
+        return frag;
+    };
+
+    const pesan = (teks, dari, kontak = []) => {
+        const el = document.createElement('div');
+        el.className = `chat-pesan chat-${dari}`;
+        const p = document.createElement('p');
+        p.append(tautkan(teks));
+        el.append(p);
+        if (kontak.length) {
+            const k = document.createElement('div');
+            k.className = 'chat-kontak';
+            kontak.forEach((c) => {
+                const a = document.createElement('a');
+                a.href = c.url; a.target = '_blank'; a.rel = 'noopener';
+                a.className = `tombol tombol-kecil chat-${c.jenis}`;
+                a.textContent = c.label;
+                k.append(a);
+            });
+            el.append(k);
+        }
+        isi.append(el);
+        isi.scrollTop = isi.scrollHeight;
+    };
+
+    const tampilkanSaran = (daftar) => {
+        saran.replaceChildren(...daftar.map((t) => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'chip-saran'; b.textContent = t;
+            b.addEventListener('click', () => kirim(t));
+            return b;
+        }));
+    };
+
+    const minta = async (metode, badan) => {
+        const res = await fetch(root.dataset.url, {
+            method: metode,
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf || '' },
+            body: badan ? JSON.stringify(badan) : undefined,
+            credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+    };
+
+    const mulai = async () => {
+        if (dimulai) return;
+        dimulai = true;
+        try {
+            const d = await minta('GET');
+            pesan(d.teks, 'bot');
+            tampilkanSaran(d.saran);
+        } catch {
+            pesan(root.dataset.tGalat, 'bot');
+            dimulai = false;
+        }
+    };
+
+    const kirim = async (teks) => {
+        teks = teks.trim();
+        if (!teks) return;
+        pesan(teks, 'saya');
+        input.value = '';
+        try {
+            const d = await minta('POST', { pesan: teks });
+            pesan(d.teks, 'bot', d.kontak);
+        } catch {
+            pesan(root.dataset.tGalat, 'bot');
+        }
+    };
+
+    const setBuka = (terbuka) => {
+        panel.hidden = !terbuka;
+        buka.setAttribute('aria-expanded', String(terbuka));
+        root.classList.toggle('terbuka', terbuka);
+        if (terbuka) { mulai(); input.focus(); } else { buka.focus(); }
+    };
+
+    buka.addEventListener('click', () => setBuka(panel.hidden));
+    root.querySelector('[data-chat-tutup]').addEventListener('click', () => setBuka(false));
+    panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') setBuka(false); });
+    form.addEventListener('submit', (e) => { e.preventDefault(); kirim(input.value); });
+})();

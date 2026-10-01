@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SosialController;
 use App\Http\Controllers\Toko\AkunController;
 use App\Http\Controllers\Toko\AlamatController;
+use App\Http\Controllers\Toko\ChatbotController;
 use App\Http\Controllers\Toko\CheckoutController;
 use App\Http\Controllers\Toko\KatalogController;
 use App\Http\Controllers\Toko\KeranjangController;
@@ -17,6 +18,9 @@ Route::get('/', [KatalogController::class, 'home'])->name('home');
 Route::get('/produk', [KatalogController::class, 'index'])->name('produk.index');
 Route::get('/produk/{product}', [KatalogController::class, 'show'])->name('produk.show');
 Route::get('/faq', [KatalogController::class, 'faq'])->name('faq');
+
+Route::get('/chatbot', [ChatbotController::class, 'mulai'])->middleware('throttle:30,1')->name('chatbot');
+Route::post('/chatbot', [ChatbotController::class, 'tanya'])->middleware('throttle:30,1');
 
 Route::post('/preferensi', [PreferensiController::class, 'update'])->middleware('throttle:30,1')->name('preferensi');
 

@@ -60,11 +60,34 @@
         @yield('isi')
     </main>
 
+    <div class="chat" data-chat data-url="{{ route('chatbot') }}" data-t-galat="{{ __('Sorry, something went wrong. Please try again.') }}">
+        <button type="button" class="chat-buka" aria-expanded="false" aria-controls="chat-panel" data-chat-buka>{{ __('Ask us') }}</button>
+        <section class="chat-panel" id="chat-panel" role="dialog" aria-modal="false" aria-label="{{ __('Ask us') }}" hidden>
+            <header class="chat-kepala">
+                <p class="chat-judul">{{ __('Ask us') }}</p>
+                <button type="button" class="tautan" data-chat-tutup aria-label="{{ __('Close') }}">{{ __('Close') }}</button>
+            </header>
+            <div class="chat-isi" data-chat-isi aria-live="polite"></div>
+            <div class="chat-saran" data-chat-saran></div>
+            <form class="chat-form" data-chat-form>
+                <label class="sr-only" for="chat-pesan">{{ __('Type your question') }}</label>
+                <input id="chat-pesan" name="pesan" type="text" maxlength="500" autocomplete="off" placeholder="{{ __('Type your question') }}" required>
+                <button type="submit" class="tombol tombol-kecil">{{ __('Send') }}</button>
+            </form>
+            <p class="chat-catatan">{{ __('Automated answers. For anything else, chat with our team.') }}</p>
+        </section>
+    </div>
+
     <footer class="footer">
         <div class="wrap footer-inner">
             <p class="wordmark wordmark-kecil">{{ config('toko.nama') }}</p>
             <p>{{ __('Prices shown in :currency. Converted from rupiah at the store\'s daily rate.', ['currency' => \App\Support\TampilanProduk::mataUang()]) }}</p>
-            <p><a href="{{ route('faq') }}">{{ __('FAQ') }}</a></p>
+            <p class="footer-tautan">
+                <a href="{{ route('faq') }}">{{ __('FAQ') }}</a>
+                @foreach (\App\Support\KontakAdmin::tautan() as $k)
+                    <a href="{{ $k['url'] }}" target="_blank" rel="noopener">{{ $k['jenis'] === 'wa' ? 'WhatsApp' : 'LINE' }}</a>
+                @endforeach
+            </p>
         </div>
     </footer>
 </body>
