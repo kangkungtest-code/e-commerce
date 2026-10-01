@@ -130,7 +130,7 @@ class KatalogAdminTest extends TestCase
             ->assertHasNoFormErrors();
 
         $variant = ProductVariant::where('sku', 'KAOS-M-HITAM')->firstOrFail();
-        $this->assertSame(['Ukuran' => 'M', 'Warna' => 'Hitam'], $variant->opsi);
+        $this->assertEquals(['Ukuran' => 'M', 'Warna' => 'Hitam'], $variant->opsi); // MySQL JSON tidak menjaga urutan key
         $this->assertSame(10, $variant->stokTersedia());
         $this->assertSame(1, StockHistory::where('variant_id', $variant->id)->where('alasan', 'restock')->count());
     }
