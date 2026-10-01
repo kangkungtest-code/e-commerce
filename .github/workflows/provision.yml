@@ -6,7 +6,7 @@ name: Provision server
 # Untuk menjalankan ulang: ubah baris PROVISION_REV di bawah lalu push.
 # Aman dijalankan ulang (idempotent).
 #
-# PROVISION_REV: 1
+# PROVISION_REV: 2
 #
 # Secrets yang dibutuhkan (Settings -> Secrets and variables -> Actions,
 # sebagai REPOSITORY secret):
