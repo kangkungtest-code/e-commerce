@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+#[Fillable([
+    'user_id', 'address_id', 'status', 'sumber_order', 'mata_uang', 'kurs_terpakai',
+    'ongkir', 'tarif_pajak_terpakai', 'subtotal', 'total', 'resi',
+])]
+class Order extends Model
+{
+    use HasUuids;
+
+    public const STATUS_MENUNGGU_PEMBAYARAN = 'menunggu_pembayaran';
+    public const STATUS_DIBAYAR = 'dibayar';
+    public const STATUS_DIPROSES = 'diproses';
+    public const STATUS_DIKIRIM = 'dikirim';
+    public const STATUS_SELESAI = 'selesai';
+    public const STATUS_KADALUARSA = 'kadaluarsa';
+    public const STATUS_DIBATALKAN = 'dibatalkan';
+
+    protected function casts(): array
+    {
+        return [
+            'kurs_terpakai' => 'decimal:10',
+            'ongkir' => 'decimal:2',
+            'tarif_pajak_terpakai' => 'decimal:2',
+            'subtotal' => 'decimal:2',
+            'total' => 'decimal:2',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function address(): BelongsTo
+    {
+        return $this->belongsTo(Address::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function returnRequests(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class);
+    }
+}
