@@ -6,7 +6,7 @@ name: Provision server
 # Untuk menjalankan ulang: ubah baris PROVISION_REV di bawah lalu push.
 # Aman dijalankan ulang (idempotent).
 #
-# PROVISION_REV: 2
+# PROVISION_REV: 3
 #
 # Secrets yang dibutuhkan (Settings -> Secrets and variables -> Actions,
 # sebagai REPOSITORY secret):
@@ -39,7 +39,18 @@ jobs:
     steps:
       - name: Lewati (secrets belum diisi)
         if: env.HAS_SECRETS != 'true'
-        run: echo "::warning::Secrets SERVER_HOST/SERVER_USER/SERVER_SSH_KEY/DB_PASSWORD belum lengkap, provision dilewati. Isi secrets lalu ubah PROVISION_REV dan push."
+        env:
+          S_HOST: ${{ secrets.SERVER_HOST != '' }}
+          S_USER: ${{ secrets.SERVER_USER != '' }}
+          S_KEY: ${{ secrets.SERVER_SSH_KEY != '' }}
+          S_DBPW: ${{ secrets.DB_PASSWORD != '' }}
+        run: |
+          missing=""
+          [ "$S_HOST" = true ] || missing="$missing SERVER_HOST"
+          [ "$S_USER" = true ] || missing="$missing SERVER_USER"
+          [ "$S_KEY"  = true ] || missing="$missing SERVER_SSH_KEY"
+          [ "$S_DBPW" = true ] || missing="$missing DB_PASSWORD"
+          echo "::warning::Secret belum terbaca:$missing. Provision dilewati. Pastikan disimpan sebagai REPOSITORY secret dengan nama persis sama."
 
       - name: Setup server via SSH
         if: env.HAS_SECRETS == 'true'
