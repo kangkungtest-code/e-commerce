@@ -13,9 +13,10 @@ use RuntimeException;
  */
 class ProductImageStorage
 {
-    public function store(UploadedFile $file): string
+    public function store(UploadedFile $file, ?string $direktori = null): string
     {
         $cfg = config('toko.product_images');
+        $cfg['directory'] = $direktori ?? $cfg['directory'];
 
         $source = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
         if ($source === false) {

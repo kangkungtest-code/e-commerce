@@ -51,4 +51,11 @@ return [
         'batas_bayar_jam' => (int) env('TOKO_BATAS_BAYAR_JAM', 24),
         'maks_qty_per_item' => 20,
     ],
+
+    'retur' => [
+        // Retur hanya untuk barang cacat / salah kirim, diajukan maksimal N hari setelah order selesai.
+        'batas_hari' => (int) env('TOKO_BATAS_RETUR_HARI', 7),
+        // Alamat tujuan pengiriman balik barang retur (ditampilkan ke pembeli setelah retur disetujui).
+        'alamat' => env('TOKO_ALAMAT_RETUR', ''),
+    ],
 ];

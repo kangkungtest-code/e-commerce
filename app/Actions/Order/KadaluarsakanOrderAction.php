@@ -28,7 +28,7 @@ class KadaluarsakanOrderAction
                 }
 
                 $this->lepas->execute($order);
-                $order->update(['status' => Order::STATUS_KADALUARSA]);
+                $order->pindahStatus(Order::STATUS_KADALUARSA, null, 'Lewat batas bayar');
 
                 return 1;
             });

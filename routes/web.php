@@ -61,6 +61,8 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/akun/pesanan', [PesananController::class, 'index'])->name('akun.pesanan');
     Route::get('/akun/pesanan/{order}', [PesananController::class, 'show'])->name('akun.pesanan.show');
     Route::post('/akun/pesanan/{order}/batal', [PesananController::class, 'batal'])->name('akun.pesanan.batal');
+    Route::post('/akun/pesanan/{order}/retur', [PesananController::class, 'ajukanRetur'])->middleware('throttle:5,1')->name('akun.pesanan.retur');
+    Route::put('/akun/retur/{retur}/resi', [PesananController::class, 'resiRetur'])->name('akun.retur.resi');
 
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1');

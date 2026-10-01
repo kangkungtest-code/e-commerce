@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,7 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
  */
 #[Fillable(['nama_lengkap', 'email', 'password', 'bahasa_preferensi', 'mata_uang_preferensi'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser, HasName
+class User extends Authenticatable implements FilamentUser, HasLocalePreference, HasName
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable;
@@ -37,6 +38,12 @@ class User extends Authenticatable implements FilamentUser, HasName
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /** Email & notifikasi dikirim dalam bahasa pilihan pembeli. */
+    public function preferredLocale(): string
+    {
+        return $this->bahasa_preferensi ?: config('app.locale');
     }
 
     public function canAccessPanel(Panel $panel): bool

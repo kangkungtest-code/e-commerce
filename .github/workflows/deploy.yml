@@ -156,12 +156,18 @@ jobs:
           TOKO_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           TOKO_LINE_CHANNEL_ID: ${{ secrets.LINE_CHANNEL_ID }}
           TOKO_LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
+          TOKO_MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          TOKO_MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          TOKO_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          TOKO_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          TOKO_MAIL_FROM_ADDRESS: ${{ secrets.MAIL_FROM_ADDRESS }}
+          TOKO_ALAMAT_RETUR: ${{ secrets.TOKO_ALAMAT_RETUR }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           command_timeout: 25m
-          envs: TOKO_BRANCH,TOKO_REPO,TOKO_GH_TOKEN,TOKO_TARGET,TOKO_DB_NAME,TOKO_APP_ENV_VAL,TOKO_APP_DEBUG_VAL,TOKO_APP_URL_VAL,TOKO_DB_PASSWORD,TOKO_ADMIN_EMAIL,TOKO_ADMIN_PASSWORD,TOKO_GOOGLE_CLIENT_ID,TOKO_GOOGLE_CLIENT_SECRET,TOKO_LINE_CHANNEL_ID,TOKO_LINE_CHANNEL_SECRET
+          envs: TOKO_BRANCH,TOKO_REPO,TOKO_GH_TOKEN,TOKO_TARGET,TOKO_DB_NAME,TOKO_APP_ENV_VAL,TOKO_APP_DEBUG_VAL,TOKO_APP_URL_VAL,TOKO_DB_PASSWORD,TOKO_ADMIN_EMAIL,TOKO_ADMIN_PASSWORD,TOKO_GOOGLE_CLIENT_ID,TOKO_GOOGLE_CLIENT_SECRET,TOKO_LINE_CHANNEL_ID,TOKO_LINE_CHANNEL_SECRET,TOKO_MAIL_HOST,TOKO_MAIL_PORT,TOKO_MAIL_USERNAME,TOKO_MAIL_PASSWORD,TOKO_MAIL_FROM_ADDRESS,TOKO_ALAMAT_RETUR
           script: |
             if [ ! -f /var/www/.provisioned ]; then
               echo "::warning::Server belum di-provision. Deploy dilewati."
@@ -228,6 +234,21 @@ jobs:
               set_env GOOGLE_CLIENT_SECRET "${TOKO_GOOGLE_CLIENT_SECRET:-}"
               set_env LINE_CHANNEL_ID "${TOKO_LINE_CHANNEL_ID:-}"
               set_env LINE_CHANNEL_SECRET "${TOKO_LINE_CHANNEL_SECRET:-}"
+              set_env APP_NAME '"Kangkung Apparel"'
+              set_env QUEUE_CONNECTION database
+              # Email: SMTP kalau secret MAIL_HOST diisi; kalau belum, email hanya dicatat di log.
+              if [ -n "${TOKO_MAIL_HOST:-}" ]; then
+                set_env MAIL_MAILER smtp
+                set_env MAIL_HOST "$TOKO_MAIL_HOST"
+                set_env MAIL_PORT "${TOKO_MAIL_PORT:-587}"
+                set_env MAIL_USERNAME "${TOKO_MAIL_USERNAME:-}"
+                set_env MAIL_PASSWORD "${TOKO_MAIL_PASSWORD:-}"
+                set_env MAIL_SCHEME "$([ "${TOKO_MAIL_PORT:-587}" = "465" ] && echo smtps || echo smtp)"
+                set_env MAIL_FROM_ADDRESS "${TOKO_MAIL_FROM_ADDRESS:-${TOKO_MAIL_USERNAME:-}}"
+              else
+                set_env MAIL_MAILER log
+              fi
+              set_env TOKO_ALAMAT_RETUR "\"${TOKO_ALAMAT_RETUR:-}\""
               sudo -n chown "$(whoami)":www-data .env
               chmod 640 .env
 

@@ -11,6 +11,7 @@ use App\Models\Stock;
 use App\Models\StockHistory;
 use App\Models\StockLocation;
 use App\Models\User;
+use App\Notifications\OrderDibuat;
 use App\Support\HitungOngkir;
 use App\Support\Kurs;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class BuatOrderAction
             throw new TokoException(__('Choose one of your saved addresses.'));
         }
 
-        return DB::transaction(function () use ($user, $alamat, $mataUang) {
+        $order = DB::transaction(function () use ($user, $alamat, $mataUang) {
             $cart = Cart::query()->where('user_id', $user->id)->lockForUpdate()->first();
             $items = $cart?->items()->with('variant.product')->get() ?? collect();
 
@@ -107,9 +108,14 @@ class BuatOrderAction
             }
 
             $cart->items()->delete();
+            $order->statusHistories()->create(['ke' => Order::STATUS_MENUNGGU_PEMBAYARAN, 'user_id' => $user->id]);
 
             return $order;
         });
+
+        $user->notify(new OrderDibuat($order));
+
+        return $order;
     }
 
     private function cekItem(CartItem $item, ?Stock $stock): void

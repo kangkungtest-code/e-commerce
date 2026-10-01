@@ -41,7 +41,7 @@ class TampilanOrder
 
     public static function detail(Order $o): array
     {
-        $o->loadMissing('items.variant.product.images');
+        $o->loadMissing('items.variant.product.images', 'statusHistories');
         $kurs = app(Kurs::class);
         $locale = app()->getLocale();
 
@@ -67,6 +67,21 @@ class TampilanOrder
             'batas_bayar' => $o->kadaluarsa_pada?->timezone(config('toko.zona_waktu'))->locale(str_replace('_', '-', $locale))->isoFormat('D MMM YYYY, HH:mm').' '.$o->kadaluarsa_pada?->timezone(config('toko.zona_waktu'))->format('T'),
             'menunggu' => $o->status === Order::STATUS_MENUNGGU_PEMBAYARAN,
             'resi' => $o->resi,
+            'riwayat' => $o->statusHistories->map(fn ($h) => [
+                'label' => self::labelStatus($h->ke),
+                'waktu' => $h->created_at->timezone(config('toko.zona_waktu'))->locale(str_replace('_', '-', $locale))->isoFormat('D MMM YYYY, HH:mm'),
+            ])->all(),
+            'bisa_retur' => TampilanRetur::bisaDiajukan($o),
+            'batas_retur_hari' => config('toko.retur.batas_hari'),
+            'retur' => ($r = $o->returnRequests()->latest()->first()) ? [
+                'model' => $r,
+                'label' => TampilanRetur::labelStatus($r->status),
+                'status' => $r->status,
+                'penjelasan' => TampilanRetur::penjelasan($r),
+                'catatan_admin' => $r->catatan_admin,
+                'resi_kembali' => $r->resi_kembali,
+                'alamat_retur' => config('toko.retur.alamat'),
+            ] : null,
         ];
     }
 }

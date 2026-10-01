@@ -39,6 +39,40 @@
                     </ul>
                 </section>
 
+                @if ($o['retur'])
+                    @php($r = $o['retur'])
+                    <section class="blok blok-sorot">
+                        <h2>{{ $r['label'] }}</h2>
+                        <p>{{ $r['penjelasan'] }}</p>
+                        @if ($r['catatan_admin'])<p><strong>{{ __('Note from the store') }}:</strong> {{ $r['catatan_admin'] }}</p>@endif
+                        @if ($r['status'] === 'disetujui')
+                            @if ($r['alamat_retur'])<p><strong>{{ __('Send it to') }}:</strong><br>{!! nl2br(e($r['alamat_retur'])) !!}</p>@endif
+                            <form method="post" action="{{ route('akun.retur.resi', $r['model']) }}" class="form form-baris">
+                                @csrf @method('put')
+                                @include('toko.partials.field', ['nama' => 'resi_kembali', 'label' => __('Return tracking number'), 'nilai' => $r['resi_kembali']])
+                                <button type="submit" class="tombol tombol-kecil">{{ __('Save') }}</button>
+                            </form>
+                        @endif
+                    </section>
+                @endif
+
+                @if ($o['bisa_retur'])
+                    <details class="blok retur" @if ($errors->hasAny(['alasan', 'foto'])) open @endif>
+                        <summary>{{ __('Item arrived damaged or wrong?') }}</summary>
+                        <p class="redup">{{ __('Request a return within :days days of delivery. Returns are for defective or incorrect items only.', ['days' => $o['batas_retur_hari']]) }}</p>
+                        <form method="post" action="{{ route('akun.pesanan.retur', $o['nomor']) }}" enctype="multipart/form-data" class="form" novalidate>
+                            @csrf
+                            @include('toko.partials.field', ['nama' => 'alasan', 'label' => __('What went wrong?'), 'tipe' => 'textarea', 'attr' => 'required'])
+                            <div @class(['field', 'field-galat' => $errors->has('foto')])>
+                                <label for="f-foto">{{ __('Photo of the problem') }}</label>
+                                <input id="f-foto" type="file" name="foto" accept="image/*" required>
+                                @error('foto')<p class="field-pesan">{{ $message }}</p>@enderror
+                            </div>
+                            <button type="submit" class="tombol tombol-kecil">{{ __('Request return') }}</button>
+                        </form>
+                    </details>
+                @endif
+
                 <section class="blok">
                     <h2>{{ __('Ship to') }}</h2>
                     <p>
@@ -51,6 +85,13 @@
             </div>
 
             <aside class="ringkasan">
+                @if ($o['riwayat'])
+                    <ol class="riwayat">
+                        @foreach ($o['riwayat'] as $h)
+                            <li><span>{{ $h['label'] }}</span><span class="redup">{{ $h['waktu'] }}</span></li>
+                        @endforeach
+                    </ol>
+                @endif
                 <dl>
                     <div><dt>{{ __('Subtotal') }}</dt><dd>{{ $o['subtotal'] }}</dd></div>
                     <div><dt>{{ __('Shipping (:kg kg)', ['kg' => $o['berat_kg']]) }}</dt><dd>{{ $o['ongkir'] }}</dd></div>

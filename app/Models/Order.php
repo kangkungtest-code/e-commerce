@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'nomor', 'user_id', 'address_id', 'alamat_snapshot', 'status', 'sumber_order', 'mata_uang', 'kurs_terpakai',
     'ongkir', 'tarif_pajak_terpakai', 'subtotal', 'total', 'subtotal_idr', 'ongkir_idr', 'total_idr',
-    'berat_gram', 'resi', 'kadaluarsa_pada',
+    'berat_gram', 'resi', 'kadaluarsa_pada', 'dibayar_pada', 'dikirim_pada', 'selesai_pada',
 ])]
 class Order extends Model
 {
@@ -63,6 +63,9 @@ class Order extends Model
             'berat_gram' => 'integer',
             'alamat_snapshot' => 'array',
             'kadaluarsa_pada' => 'datetime',
+            'dibayar_pada' => 'datetime',
+            'dikirim_pada' => 'datetime',
+            'selesai_pada' => 'datetime',
         ];
     }
 
@@ -84,6 +87,26 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at');
+    }
+
+    /**
+     * Ganti status + catat riwayat. Hanya dipanggil dari Action class (di dalam transaksi),
+     * yang sudah mengurus efek sampingnya (stok, refund, notifikasi).
+     */
+    public function pindahStatus(string $ke, ?User $oleh = null, ?string $catatan = null, array $atribut = []): void
+    {
+        if (! $this->bisaPindahKe($ke)) {
+            throw new \App\Exceptions\TokoException(__('Order status cannot change from :from to :to.', ['from' => $this->status, 'to' => $ke]));
+        }
+
+        $dari = $this->status;
+        $this->update(['status' => $ke] + $atribut);
+        $this->statusHistories()->create(['dari' => $dari, 'ke' => $ke, 'user_id' => $oleh?->id, 'catatan' => $catatan]);
     }
 
     public function returnRequests(): HasMany
