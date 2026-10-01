@@ -141,46 +141,46 @@ jobs:
         if: env.HAS_SECRETS == 'true'
         uses: appleboy/ssh-action@v1.2.0
         env:
-          BRANCH: ${{ github.ref_name }}
-          REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
-          TARGET: ${{ steps.target.outputs.dir }}
-          DB_NAME: ${{ steps.target.outputs.db }}
-          APP_ENV_VAL: ${{ steps.target.outputs.env }}
-          APP_DEBUG_VAL: ${{ steps.target.outputs.debug }}
-          APP_URL_VAL: ${{ steps.target.outputs.url }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          TOKO_BRANCH: ${{ github.ref_name }}
+          TOKO_REPO: ${{ github.repository }}
+          TOKO_GH_TOKEN: ${{ github.token }}
+          TOKO_TARGET: ${{ steps.target.outputs.dir }}
+          TOKO_DB_NAME: ${{ steps.target.outputs.db }}
+          TOKO_APP_ENV_VAL: ${{ steps.target.outputs.env }}
+          TOKO_APP_DEBUG_VAL: ${{ steps.target.outputs.debug }}
+          TOKO_APP_URL_VAL: ${{ steps.target.outputs.url }}
+          TOKO_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          TOKO_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          TOKO_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           command_timeout: 25m
-          envs: BRANCH,REPO,GH_TOKEN,TARGET,DB_NAME,APP_ENV_VAL,APP_DEBUG_VAL,APP_URL_VAL,DB_PASSWORD,ADMIN_EMAIL,ADMIN_PASSWORD
+          envs: TOKO_BRANCH,TOKO_REPO,TOKO_GH_TOKEN,TOKO_TARGET,TOKO_DB_NAME,TOKO_APP_ENV_VAL,TOKO_APP_DEBUG_VAL,TOKO_APP_URL_VAL,TOKO_DB_PASSWORD,TOKO_ADMIN_EMAIL,TOKO_ADMIN_PASSWORD
           script: |
             if [ ! -f /var/www/.provisioned ]; then
               echo "::warning::Server belum di-provision. Deploy dilewati."
               exit 0
             fi
 
-            LOG="/tmp/deploy-${BRANCH}.log"
+            LOG="/tmp/deploy-${TOKO_BRANCH}.log"
             : > "$LOG"
 
             deploy () {
               set -euo pipefail
 
-              echo "==> Deploy $BRANCH -> $TARGET"
-              AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
-              PLAIN_URL="https://github.com/${REPO}.git"
+              echo "==> Deploy $TOKO_BRANCH -> $TOKO_TARGET"
+              AUTH_URL="https://x-access-token:${TOKO_GH_TOKEN}@github.com/${TOKO_REPO}.git"
+              PLAIN_URL="https://github.com/${TOKO_REPO}.git"
 
-              cd "$TARGET"
+              cd "$TOKO_TARGET"
               if [ ! -d .git ]; then
                 git init -q
                 git remote add origin "$PLAIN_URL"
               fi
-              git fetch -q --depth 1 "$AUTH_URL" "$BRANCH"
-              git checkout -q -B "$BRANCH" FETCH_HEAD
+              git fetch -q --depth 1 "$AUTH_URL" "$TOKO_BRANCH"
+              git checkout -q -B "$TOKO_BRANCH" FETCH_HEAD
               git reset -q --hard FETCH_HEAD
               git log -1 --oneline
 
@@ -207,15 +207,15 @@ jobs:
                   printf '%s=%s\n' "$key" "$val" >> .env
                 fi
               }
-              set_env APP_ENV "$APP_ENV_VAL"
-              set_env APP_DEBUG "$APP_DEBUG_VAL"
-              set_env APP_URL "$APP_URL_VAL"
+              set_env APP_ENV "$TOKO_APP_ENV_VAL"
+              set_env APP_DEBUG "$TOKO_APP_DEBUG_VAL"
+              set_env APP_URL "$TOKO_APP_URL_VAL"
               set_env DB_CONNECTION mysql
               set_env DB_HOST 127.0.0.1
               set_env DB_PORT 3306
-              set_env DB_DATABASE "$DB_NAME"
+              set_env DB_DATABASE "$TOKO_DB_NAME"
               set_env DB_USERNAME toko_app
-              set_env DB_PASSWORD "$DB_PASSWORD"
+              set_env DB_PASSWORD "$TOKO_DB_PASSWORD"
               # Kredensial admin tidak disimpan di .env server, hanya dipakai seeder.
               set_env ADMIN_EMAIL ""
               set_env ADMIN_PASSWORD ""
@@ -224,7 +224,7 @@ jobs:
 
               echo "==> Composer install"
               rm -f bootstrap/cache/config.php bootstrap/cache/routes-*.php
-              if [ "$APP_ENV_VAL" = "demo" ]; then
+              if [ "$TOKO_APP_ENV_VAL" = "demo" ]; then
                 composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
               else
                 composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
@@ -237,7 +237,7 @@ jobs:
               echo "==> Migrate & seed"
               php artisan config:clear
               php artisan migrate --force
-              ADMIN_EMAIL="${ADMIN_EMAIL:-admin@toko.test}" ADMIN_PASSWORD="${ADMIN_PASSWORD:-}" \
+              ADMIN_EMAIL="${TOKO_ADMIN_EMAIL:-admin@toko.test}" ADMIN_PASSWORD="${TOKO_ADMIN_PASSWORD:-}" \
                 php artisan db:seed --force
 
               echo "==> Cache"
@@ -248,7 +248,7 @@ jobs:
               sudo -n chown -R "$(whoami)":www-data storage bootstrap/cache
               sudo -n chmod -R ug+rwX storage bootstrap/cache
               sudo -n systemctl reload "php$(cat /etc/toko-php-version)-fpm" || true
-              echo "==> Deploy selesai: $APP_URL_VAL"
+              echo "==> Deploy selesai: $TOKO_APP_URL_VAL"
             }
 
             set -o pipefail
