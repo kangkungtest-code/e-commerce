@@ -1,0 +1,225 @@
+name: Provision server
+
+# Setup awal server dev/demo (Biznet Gio). Dijalankan MANUAL sekali saja:
+#   tab Actions -> "Provision server" -> Run workflow.
+# Aman dijalankan ulang (idempotent) kalau perlu memperbaiki konfigurasi.
+#
+# Secrets yang dibutuhkan (Settings -> Secrets and variables -> Actions):
+#   SERVER_HOST     IP server, mis. 103.103.23.222
+#   SERVER_USER     user SSH (butuh sudo tanpa password)
+#   SERVER_SSH_KEY  private key SSH lengkap (termasuk baris BEGIN/END)
+#   DB_PASSWORD     password user MySQL `toko_app` (tanpa tanda ' atau \)
+#
+# Hasil:
+#   demo  -> http://<IP>/        root /var/www/demo/public   database toko_demo
+#   dev   -> http://<IP>:8080/   root /var/www/dev/public    database toko_dev
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: provision
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Cek secrets
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          missing=""
+          for s in SERVER_HOST SERVER_USER SERVER_SSH_KEY DB_PASSWORD; do
+            [ -z "${!s}" ] && missing="$missing $s"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Secret belum diisi:$missing"
+            exit 1
+          fi
+
+      - name: Setup server via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 40m
+          envs: DB_PASSWORD
+          script: |
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            DEPLOY_USER="$(whoami)"
+            PHP_VER=8.3
+
+            echo "==> Cek sudo"
+            if ! sudo -n true 2>/dev/null; then
+              echo "User $DEPLOY_USER butuh sudo tanpa password (NOPASSWD)."
+              exit 1
+            fi
+
+            case "$DB_PASSWORD" in
+              *"'"*|*'\'*) echo "DB_PASSWORD tidak boleh mengandung ' atau \\"; exit 1 ;;
+            esac
+
+            . /etc/os-release
+            echo "==> OS: $PRETTY_NAME"
+
+            echo "==> Swap 2GB"
+            if ! sudo swapon --show | grep -q '/swapfile'; then
+              [ -f /swapfile ] || sudo fallocate -l 2G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+            fi
+            echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf >/dev/null
+            sudo sysctl -p /etc/sysctl.d/99-swappiness.conf
+
+            echo "==> Paket dasar"
+            sudo apt-get update -y
+            sudo apt-get install -y software-properties-common ca-certificates curl unzip git ufw
+
+            # Ubuntu 24.04 sudah punya PHP 8.3; versi lebih lama butuh PPA ondrej.
+            if ! apt-cache policy php${PHP_VER}-fpm | grep -q 'Candidate: [0-9]'; then
+              echo "==> Tambah PPA ondrej/php"
+              sudo add-apt-repository -y ppa:ondrej/php
+              sudo apt-get update -y
+            fi
+
+            echo "==> Install Nginx, PHP ${PHP_VER}, MySQL"
+            sudo apt-get install -y nginx mysql-server \
+              php${PHP_VER}-fpm php${PHP_VER}-cli php${PHP_VER}-mysql php${PHP_VER}-mbstring \
+              php${PHP_VER}-xml php${PHP_VER}-curl php${PHP_VER}-zip php${PHP_VER}-bcmath \
+              php${PHP_VER}-intl php${PHP_VER}-gd php${PHP_VER}-opcache
+
+            echo "==> Composer"
+            if ! command -v composer >/dev/null; then
+              EXPECTED="$(curl -fsSL https://composer.github.io/installer.sig)"
+              php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+              ACTUAL="$(php -r "echo hash_file('sha384', '/tmp/composer-setup.php');")"
+              if [ "$EXPECTED" != "$ACTUAL" ]; then echo "Checksum Composer tidak cocok"; exit 1; fi
+              sudo php /tmp/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
+              rm -f /tmp/composer-setup.php
+            fi
+            composer --version
+
+            echo "==> Tuning PHP-FPM (pm=ondemand, hemat RAM)"
+            POOL=/etc/php/${PHP_VER}/fpm/pool.d/www.conf
+            sudo sed -i -E 's/^;?pm = .*/pm = ondemand/' "$POOL"
+            sudo sed -i -E 's/^;?pm.max_children = .*/pm.max_children = 10/' "$POOL"
+            sudo sed -i -E 's/^;?pm.process_idle_timeout = .*/pm.process_idle_timeout = 10s/' "$POOL"
+            sudo sed -i -E 's/^;?pm.max_requests = .*/pm.max_requests = 500/' "$POOL"
+            sudo tee /etc/php/${PHP_VER}/fpm/conf.d/99-toko.ini >/dev/null <<'EOF'
+            memory_limit = 256M
+            upload_max_filesize = 20M
+            post_max_size = 25M
+            max_execution_time = 60
+            opcache.enable = 1
+            opcache.memory_consumption = 96
+            opcache.max_accelerated_files = 20000
+            opcache.validate_timestamps = 1
+            opcache.revalidate_freq = 2
+            EOF
+
+            echo "==> Tuning MySQL (RAM 2GB)"
+            sudo tee /etc/mysql/mysql.conf.d/zz-toko-tuning.cnf >/dev/null <<'EOF'
+            [mysqld]
+            innodb_buffer_pool_size = 256M
+            max_connections = 50
+            performance_schema = OFF
+            key_buffer_size = 8M
+            tmp_table_size = 16M
+            max_heap_table_size = 16M
+            EOF
+            sudo systemctl restart mysql
+
+            echo "==> Database & user MySQL"
+            sudo mysql <<SQL
+            CREATE DATABASE IF NOT EXISTS toko_dev  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE DATABASE IF NOT EXISTS toko_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE USER IF NOT EXISTS 'toko_app'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+            ALTER USER 'toko_app'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+            GRANT ALL PRIVILEGES ON toko_dev.*  TO 'toko_app'@'localhost';
+            GRANT ALL PRIVILEGES ON toko_demo.* TO 'toko_app'@'localhost';
+            FLUSH PRIVILEGES;
+            SQL
+
+            echo "==> Folder aplikasi"
+            sudo usermod -aG www-data "$DEPLOY_USER"
+            for d in /var/www/dev /var/www/demo; do
+              sudo mkdir -p "$d"
+              sudo chown "$DEPLOY_USER":www-data "$d"
+              sudo chmod 2775 "$d"
+            done
+
+            echo "==> Nginx (demo :80, dev :8080)"
+            write_site () {
+              local name="$1" port="$2" root="$3" default="$4"
+              sudo tee /etc/nginx/sites-available/"$name" >/dev/null <<EOF
+            server {
+                listen ${port}${default};
+                listen [::]:${port}${default};
+                server_name _;
+                root ${root}/public;
+                index index.php index.html;
+                charset utf-8;
+                client_max_body_size 25M;
+
+                add_header X-Frame-Options "SAMEORIGIN";
+                add_header X-Content-Type-Options "nosniff";
+
+                location / {
+                    try_files \$uri \$uri/ /index.php?\$query_string;
+                }
+
+                location = /favicon.ico { access_log off; log_not_found off; }
+                location = /robots.txt  { access_log off; log_not_found off; }
+
+                error_page 404 /index.php;
+
+                location ~ ^/index\.php(/|\$) {
+                    fastcgi_pass unix:/run/php/php${PHP_VER}-fpm.sock;
+                    fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+                    include fastcgi_params;
+                    fastcgi_hide_header X-Powered-By;
+                }
+
+                location ~ /\.(?!well-known).* {
+                    deny all;
+                }
+            }
+            EOF
+              sudo ln -sf /etc/nginx/sites-available/"$name" /etc/nginx/sites-enabled/"$name"
+            }
+            sudo rm -f /etc/nginx/sites-enabled/default
+            write_site toko-demo 80   /var/www/demo " default_server"
+            write_site toko-dev  8080 /var/www/dev  ""
+            sudo nginx -t
+
+            echo "==> Firewall (ufw)"
+            sudo ufw allow OpenSSH
+            sudo ufw allow 22/tcp
+            sudo ufw allow 80/tcp
+            sudo ufw allow 443/tcp
+            sudo ufw allow 8080/tcp
+            sudo ufw --force enable
+            sudo ufw status verbose
+
+            echo "==> Restart service"
+            sudo systemctl enable --now nginx php${PHP_VER}-fpm mysql
+            sudo systemctl restart php${PHP_VER}-fpm
+            sudo systemctl reload nginx
+
+            sudo touch /var/www/.provisioned
+            echo "==> Selesai. Ringkasan:"
+            php -v | head -1
+            mysql --version
+            nginx -v 2>&1
+            free -h

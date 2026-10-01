@@ -1,0 +1,147 @@
+name: Deploy
+
+# Auto-deploy tiap push:
+#   claude-dev -> /var/www/dev   (http://<IP>:8080, database toko_dev)
+#   main       -> /var/www/demo  (http://<IP>/,     database toko_demo)
+#
+# Butuh secrets yang sama dengan provision.yml:
+#   SERVER_HOST, SERVER_USER, SERVER_SSH_KEY, DB_PASSWORD
+# Kalau secrets belum diisi atau server belum di-provision, job dilewati
+# dengan peringatan (tidak gagal merah).
+
+on:
+  push:
+    branches: [claude-dev, main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HAS_SECRETS: ${{ secrets.SERVER_HOST != '' && secrets.SERVER_USER != '' && secrets.SERVER_SSH_KEY != '' && secrets.DB_PASSWORD != '' }}
+    steps:
+      - name: Tentukan target
+        id: target
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "dir=/var/www/demo"  >> "$GITHUB_OUTPUT"
+            echo "db=toko_demo"       >> "$GITHUB_OUTPUT"
+            echo "env=production"     >> "$GITHUB_OUTPUT"
+            echo "debug=false"        >> "$GITHUB_OUTPUT"
+            echo "url=http://${{ secrets.SERVER_HOST }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=/var/www/dev"   >> "$GITHUB_OUTPUT"
+            echo "db=toko_dev"        >> "$GITHUB_OUTPUT"
+            echo "env=local"          >> "$GITHUB_OUTPUT"
+            echo "debug=true"         >> "$GITHUB_OUTPUT"
+            echo "url=http://${{ secrets.SERVER_HOST }}:8080" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lewati (secrets belum diisi)
+        if: env.HAS_SECRETS != 'true'
+        run: echo "::warning::Secrets SERVER_HOST/SERVER_USER/SERVER_SSH_KEY/DB_PASSWORD belum lengkap, deploy dilewati."
+
+      - name: Deploy via SSH
+        if: env.HAS_SECRETS == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          BRANCH: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ steps.target.outputs.dir }}
+          DB_NAME: ${{ steps.target.outputs.db }}
+          APP_ENV_VAL: ${{ steps.target.outputs.env }}
+          APP_DEBUG_VAL: ${{ steps.target.outputs.debug }}
+          APP_URL_VAL: ${{ steps.target.outputs.url }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 25m
+          envs: BRANCH,REPO,GH_TOKEN,TARGET,DB_NAME,APP_ENV_VAL,APP_DEBUG_VAL,APP_URL_VAL,DB_PASSWORD
+          script: |
+            set -euo pipefail
+
+            if [ ! -f /var/www/.provisioned ]; then
+              echo "Server belum di-provision. Jalankan workflow 'Provision server' dulu. Deploy dilewati."
+              exit 0
+            fi
+
+            echo "==> Deploy $BRANCH -> $TARGET"
+            AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+            PLAIN_URL="https://github.com/${REPO}.git"
+
+            cd "$TARGET"
+            if [ ! -d .git ]; then
+              git init -q
+              git remote add origin "$PLAIN_URL"
+            fi
+            git fetch -q --depth 1 "$AUTH_URL" "$BRANCH"
+            git checkout -q -B "$BRANCH" FETCH_HEAD
+            git reset -q --hard FETCH_HEAD
+            git log -1 --oneline
+
+            if [ ! -f artisan ]; then
+              echo "Belum ada aplikasi Laravel (artisan tidak ditemukan). Kode sudah disinkron, langkah Laravel dilewati."
+              exit 0
+            fi
+
+            echo "==> Composer install"
+            if [ "$APP_ENV_VAL" = "production" ]; then
+              composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+            else
+              composer install --no-interaction --prefer-dist --optimize-autoloader
+            fi
+
+            echo "==> .env"
+            if [ ! -f .env ]; then
+              cp .env.example .env
+              NEW_ENV=1
+            else
+              NEW_ENV=0
+            fi
+            set_env () {
+              local key="$1" val="$2" esc
+              esc=$(printf '%s' "$val" | sed -e 's/[\/&|]/\\&/g')
+              if grep -qE "^#?\s*${key}=" .env; then
+                sed -i -E "s|^#?\s*${key}=.*|${key}=${esc}|" .env
+              else
+                printf '%s=%s\n' "$key" "$val" >> .env
+              fi
+            }
+            set_env APP_ENV "$APP_ENV_VAL"
+            set_env APP_DEBUG "$APP_DEBUG_VAL"
+            set_env APP_URL "$APP_URL_VAL"
+            set_env DB_CONNECTION mysql
+            set_env DB_HOST 127.0.0.1
+            set_env DB_PORT 3306
+            set_env DB_DATABASE "$DB_NAME"
+            set_env DB_USERNAME toko_app
+            set_env DB_PASSWORD "$DB_PASSWORD"
+            if [ "$NEW_ENV" = "1" ] || ! grep -qE '^APP_KEY=.+' .env; then
+              php artisan key:generate --force
+            fi
+            chmod 640 .env
+
+            echo "==> Permission storage & cache"
+            mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
+            chgrp -R www-data storage bootstrap/cache
+            chmod -R ug+rwX storage bootstrap/cache
+            chgrp www-data .env
+
+            echo "==> Migrate & cache"
+            php artisan config:clear
+            php artisan migrate --force
+            php artisan storage:link 2>/dev/null || true
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            sudo -n systemctl reload php8.3-fpm || true
+            echo "==> Deploy selesai: $APP_URL_VAL"
