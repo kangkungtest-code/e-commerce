@@ -16,9 +16,23 @@ class Product extends Model
     /** @var array<int, string> Kolom JSON multi-bahasa (id / en / zh-TW). */
     public array $translatable = ['nama_terjemahan', 'deskripsi_terjemahan'];
 
+    protected static function booted(): void
+    {
+        // Hapus foto lewat model supaya file di disk ikut terhapus
+        // (cascade di database tidak memicu event model).
+        static::deleting(function (self $product) {
+            $product->images()->get()->each->delete();
+        });
+    }
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('urutan');
     }
 
     public function variants(): HasMany

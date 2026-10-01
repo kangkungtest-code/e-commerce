@@ -22,6 +22,14 @@ class ProductVariant extends Model
         ];
     }
 
+    /** Stok yang bisa dijual (semua lokasi): jumlah fisik - yang sedang di-reserve. */
+    public function stokTersedia(): int
+    {
+        $stocks = $this->relationLoaded('stocks') ? $this->stocks : $this->stocks()->get();
+
+        return (int) $stocks->sum(fn (Stock $s) => $s->jumlah - $s->jumlah_reserved);
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
