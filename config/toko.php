@@ -1,6 +1,9 @@
 <?php
 
 return [
+    /* Nama toko di storefront. */
+    'nama' => env('TOKO_NAMA', 'Kangkung Apparel'),
+
     /*
     | Bahasa yang didukung untuk konten (produk, FAQ) dan UI.
     | Urutan = urutan tab di panel admin. Locale pertama = default storefront.

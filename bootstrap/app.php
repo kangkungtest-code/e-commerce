@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Bahasa & mata uang storefront (panel admin Filament punya stack middleware sendiri).
+        $middleware->web(append: [
+            \App\Http\Middleware\SetPreferensiToko::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
