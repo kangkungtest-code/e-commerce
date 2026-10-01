@@ -143,5 +143,5 @@ jobs:
             php artisan route:cache
             php artisan view:cache
 
-            sudo -n systemctl reload php8.3-fpm || true
+            sudo -n systemctl reload "php$(cat /etc/toko-php-version)-fpm" || true
             echo "==> Deploy selesai: $APP_URL_VAL"
