@@ -17,5 +17,10 @@ class DatabaseSeeder extends Seeder
             StockLocationSeeder::class,
             AdminUserSeeder::class,
         ]);
+
+        // Katalog contoh hanya untuk laptop & server dev/demo, tidak untuk production.
+        if (app()->environment(['local', 'dev', 'demo'])) {
+            $this->call(DemoCatalogSeeder::class);
+        }
     }
 }
