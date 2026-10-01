@@ -152,12 +152,16 @@ jobs:
           TOKO_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           TOKO_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           TOKO_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          TOKO_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          TOKO_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TOKO_LINE_CHANNEL_ID: ${{ secrets.LINE_CHANNEL_ID }}
+          TOKO_LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           command_timeout: 25m
-          envs: TOKO_BRANCH,TOKO_REPO,TOKO_GH_TOKEN,TOKO_TARGET,TOKO_DB_NAME,TOKO_APP_ENV_VAL,TOKO_APP_DEBUG_VAL,TOKO_APP_URL_VAL,TOKO_DB_PASSWORD,TOKO_ADMIN_EMAIL,TOKO_ADMIN_PASSWORD
+          envs: TOKO_BRANCH,TOKO_REPO,TOKO_GH_TOKEN,TOKO_TARGET,TOKO_DB_NAME,TOKO_APP_ENV_VAL,TOKO_APP_DEBUG_VAL,TOKO_APP_URL_VAL,TOKO_DB_PASSWORD,TOKO_ADMIN_EMAIL,TOKO_ADMIN_PASSWORD,TOKO_GOOGLE_CLIENT_ID,TOKO_GOOGLE_CLIENT_SECRET,TOKO_LINE_CHANNEL_ID,TOKO_LINE_CHANNEL_SECRET
           script: |
             if [ ! -f /var/www/.provisioned ]; then
               echo "::warning::Server belum di-provision. Deploy dilewati."
@@ -219,6 +223,11 @@ jobs:
               # Kredensial admin tidak disimpan di .env server, hanya dipakai seeder.
               set_env ADMIN_EMAIL ""
               set_env ADMIN_PASSWORD ""
+              # Login sosial (opsional): tombol Google/LINE muncul kalau secret-nya diisi.
+              set_env GOOGLE_CLIENT_ID "${TOKO_GOOGLE_CLIENT_ID:-}"
+              set_env GOOGLE_CLIENT_SECRET "${TOKO_GOOGLE_CLIENT_SECRET:-}"
+              set_env LINE_CHANNEL_ID "${TOKO_LINE_CHANNEL_ID:-}"
+              set_env LINE_CHANNEL_SECRET "${TOKO_LINE_CHANNEL_SECRET:-}"
               sudo -n chown "$(whoami)":www-data .env
               chmod 640 .env
 
@@ -248,6 +257,13 @@ jobs:
               sudo -n chown -R "$(whoami)":www-data storage bootstrap/cache
               sudo -n chmod -R ug+rwX storage bootstrap/cache
               sudo -n systemctl reload "php$(cat /etc/toko-php-version)-fpm" || true
+              echo "==> Cron scheduler (order kadaluarsa, dll.)"
+              CRON_LINE="* * * * * cd ${TOKO_TARGET} && php artisan schedule:run >> /dev/null 2>&1"
+              CRON_ADA="$(crontab -l 2>/dev/null || true)"
+              CRON_LAIN="$(printf '%s\n' "$CRON_ADA" | grep -vF "cd ${TOKO_TARGET} && php artisan schedule:run" || true)"
+              printf '%s\n%s\n' "$CRON_LAIN" "$CRON_LINE" | sed '/^$/d' | crontab -
+              crontab -l | grep -F "${TOKO_TARGET}"
+
               echo "==> Deploy selesai: $TOKO_APP_URL_VAL"
             }
 

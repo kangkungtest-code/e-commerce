@@ -32,7 +32,9 @@
                 @endif
             </div>
 
-            <div class="info" data-pemilih>
+            <form class="info" data-pemilih method="post" action="{{ route('keranjang.tambah') }}">
+                @csrf
+                <input type="hidden" name="product_id" value="{{ $p['id'] }}">
                 <h1 class="judul-produk">{{ $p['nama'] }}</h1>
                 <p class="harga" data-harga>{{ $p['awal']['harga'] ?? '' }}</p>
 
@@ -57,8 +59,16 @@
                    data-t-sisa="{{ __('Only :count left') }}"
                    data-t-tidak-ada="{{ __('This combination is not available') }}"></p>
 
-                <button type="button" class="tombol tombol-lebar" disabled>{{ __('Ordering opens soon') }}</button>
-                <p class="catatan">{{ __('Online ordering is being prepared. You can already browse every color and size.') }}</p>
+                <div class="beli">
+                    <label class="qty">
+                        <span class="sr-only">{{ __('Quantity') }}</span>
+                        <input type="number" name="qty" value="1" min="1" max="{{ config('toko.order.maks_qty_per_item') }}" inputmode="numeric">
+                    </label>
+                    <button type="submit" class="tombol" data-tombol-beli @disabled($p['habis'])>{{ __('Add to cart') }}</button>
+                </div>
+                @if (session('ditambahkan'))
+                    <p class="catatan berhasil" role="status">{{ session('ditambahkan') }} <a href="{{ route('keranjang') }}">{{ __('View cart') }}</a></p>
+                @endif
 
                 @if ($p['deskripsi'])
                     <div class="deskripsi">{!! nl2br(e($p['deskripsi'])) !!}</div>
@@ -66,7 +76,7 @@
                 <p class="sku" data-sku>{{ $p['awal']['sku'] ?? '' }}</p>
 
                 <script type="application/json" data-varian>@json($p['varian'])</script>
-            </div>
+            </form>
         </div>
 
         @if ($terkait->isNotEmpty())

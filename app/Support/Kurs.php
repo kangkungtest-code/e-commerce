@@ -51,10 +51,23 @@ class Kurs
         return round($idr * $this->rateEfektif($tujuan), $this->desimal($tujuan));
     }
 
+    /** Konversi dengan kurs snapshot (mis. harga item di order lama). */
+    public function konversiDenganRate(float $idr, float $rate, string $tujuan): float
+    {
+        return round($idr * $rate, $this->desimal($tujuan));
+    }
+
     public function format(float $idr, string $tujuan): string
     {
         $tujuan = $this->mataUangEfektif($tujuan);
-        $nilai = $this->konversi($idr, $tujuan);
+
+        return $this->formatNilai($this->konversi($idr, $tujuan), $tujuan);
+    }
+
+    /** Format nilai yang sudah dalam mata uang tujuan (mis. total order). */
+    public function formatNilai(float $nilai, string $tujuan): string
+    {
+        $tujuan = strtoupper($tujuan);
 
         return match ($tujuan) {
             'IDR' => 'Rp'.number_format($nilai, 0, ',', '.'),

@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    // Login sosial (lihat App\Support\Oauth). Tombol hanya muncul kalau id & secret diisi.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    ],
+
+    'line' => [
+        'client_id' => env('LINE_CHANNEL_ID'),
+        'client_secret' => env('LINE_CHANNEL_SECRET'),
+    ],
+
 ];

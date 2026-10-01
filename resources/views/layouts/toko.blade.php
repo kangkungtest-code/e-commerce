@@ -21,6 +21,17 @@
                 <a href="{{ route('faq') }}" @class(['aktif' => request()->routeIs('faq')])>{{ __('FAQ') }}</a>
             </nav>
 
+            <div class="akun-nav">
+                @if ($pembeli)
+                    <a href="{{ route('akun') }}" @class(['aktif' => request()->routeIs('akun*')])>{{ __('Account') }}</a>
+                @else
+                    <a href="{{ route('login') }}" @class(['aktif' => request()->routeIs('login', 'daftar')])>{{ __('Sign in') }}</a>
+                @endif
+                <a href="{{ route('keranjang') }}" class="keranjang-link" @if (request()->routeIs('keranjang')) aria-current="page" @endif>
+                    {{ __('Cart') }}<span class="jumlah" aria-label="{{ trans_choice('{0} empty|{1} :count item|[2,*] :count items', $jumlahKeranjang) }}">{{ $jumlahKeranjang }}</span>
+                </a>
+            </div>
+
             <form class="prefs" method="post" action="{{ route('preferensi') }}" data-auto-submit>
                 @csrf
                 <label>
@@ -45,6 +56,7 @@
     </header>
 
     <main id="isi">
+        @include('toko.partials.pesan')
         @yield('isi')
     </main>
 

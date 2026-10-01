@@ -7,6 +7,7 @@ use App\Models\ExchangeRate;
 use App\Models\Faq;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\ShippingZone;
 use App\Support\ProductImageStorage;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\UploadedFile;
@@ -36,6 +37,8 @@ class DemoCatalogSeeder extends Seeder
             );
         }
 
+        $this->zonaOngkir();
+
         if (Faq::query()->doesntExist()) {
             foreach ($data['faq'] as $i => $faq) {
                 Faq::create([
@@ -48,6 +51,26 @@ class DemoCatalogSeeder extends Seeder
         }
 
         $this->command?->info("Katalog demo: {$dibuat} produk baru.");
+    }
+
+    /** Tarif contoh (perkiraan, bukan tarif kurir sungguhan). */
+    private function zonaOngkir(): void
+    {
+        $zona = [
+            ['Indonesia', ['ID'], [[0, 1000, 20000], [1001, 3000, 35000], [3001, 10000, 60000], [10001, 30000, 120000]]],
+            ['Taiwan', ['TW'], [[0, 1000, 180000], [1001, 3000, 320000], [3001, 10000, 650000]]],
+        ];
+
+        foreach ($zona as [$nama, $negara, $tarif]) {
+            if (ShippingZone::query()->where('nama', $nama)->exists()) {
+                continue;
+            }
+
+            $z = ShippingZone::create(['nama' => $nama, 'negara' => $negara, 'is_active' => true]);
+            foreach ($tarif as [$min, $max, $idr]) {
+                $z->rates()->create(['berat_min_gram' => $min, 'berat_max_gram' => $max, 'tarif_idr' => $idr]);
+            }
+        }
     }
 
     private function produk(array $p, array $palet): bool

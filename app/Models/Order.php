@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'user_id', 'address_id', 'status', 'sumber_order', 'mata_uang', 'kurs_terpakai',
-    'ongkir', 'tarif_pajak_terpakai', 'subtotal', 'total', 'resi',
+    'nomor', 'user_id', 'address_id', 'alamat_snapshot', 'status', 'sumber_order', 'mata_uang', 'kurs_terpakai',
+    'ongkir', 'tarif_pajak_terpakai', 'subtotal', 'total', 'subtotal_idr', 'ongkir_idr', 'total_idr',
+    'berat_gram', 'resi', 'kadaluarsa_pada',
 ])]
 class Order extends Model
 {
@@ -24,6 +25,30 @@ class Order extends Model
     public const STATUS_KADALUARSA = 'kadaluarsa';
     public const STATUS_DIBATALKAN = 'dibatalkan';
 
+    /**
+     * State machine: status -> status berikutnya yang diizinkan. Tidak bisa loncat.
+     * (`retur` ditangani tabel return_requests, bukan status order.)
+     */
+    public const TRANSISI = [
+        self::STATUS_MENUNGGU_PEMBAYARAN => [self::STATUS_DIBAYAR, self::STATUS_KADALUARSA, self::STATUS_DIBATALKAN],
+        self::STATUS_DIBAYAR => [self::STATUS_DIPROSES, self::STATUS_DIBATALKAN],
+        self::STATUS_DIPROSES => [self::STATUS_DIKIRIM],
+        self::STATUS_DIKIRIM => [self::STATUS_SELESAI],
+        self::STATUS_SELESAI => [],
+        self::STATUS_KADALUARSA => [],
+        self::STATUS_DIBATALKAN => [],
+    ];
+
+    public function bisaPindahKe(string $status): bool
+    {
+        return in_array($status, self::TRANSISI[$this->status] ?? [], true);
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'nomor';
+    }
+
     protected function casts(): array
     {
         return [
@@ -32,6 +57,12 @@ class Order extends Model
             'tarif_pajak_terpakai' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
+            'subtotal_idr' => 'decimal:2',
+            'ongkir_idr' => 'decimal:2',
+            'total_idr' => 'decimal:2',
+            'berat_gram' => 'integer',
+            'alamat_snapshot' => 'array',
+            'kadaluarsa_pada' => 'datetime',
         ];
     }
 

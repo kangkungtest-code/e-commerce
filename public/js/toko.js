@@ -23,6 +23,7 @@
         const harga = root.querySelector('[data-harga]');
         const stok = root.querySelector('[data-stok]');
         const sku = root.querySelector('[data-sku]');
+        const beli = root.querySelector('[data-tombol-beli]');
         const radios = [...root.querySelectorAll('input[type="radio"][name^="opsi["]')];
         const kunci = (r) => r.name.slice(5, -1);
 
@@ -50,6 +51,7 @@
             });
 
             stok.classList.remove('habis');
+            if (beli) beli.disabled = !v || v.stok <= 0;
             if (!v) {
                 stok.textContent = stok.dataset.tTidakAda;
                 stok.classList.add('habis');
