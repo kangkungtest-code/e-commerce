@@ -30,7 +30,7 @@ class ProductsTable
                     ->label('Nama')
                     ->state(fn (Product $record): string => $record->getTranslation('nama_terjemahan', 'id'))
                     ->description(fn (Product $record): string => $record->getTranslation('nama_terjemahan', 'en'))
-                    ->searchable(query: fn (Builder $query, string $search) => $query->where('nama_terjemahan', 'like', "%{$search}%")),
+                    ->searchable(query: fn (Builder $query, string $search) => Product::cariNama($query, $search)),
                 TextColumn::make('kategori')
                     ->badge()
                     ->placeholder('—')

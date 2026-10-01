@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,6 +29,17 @@ class Product extends Model
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    /**
+     * Cari di nama semua bahasa, tidak peka huruf besar/kecil.
+     * (Kolom JSON di MySQL dibandingkan secara biner, jadi perlu CAST + LOWER.)
+     */
+    public static function cariNama(Builder $query, string $kata): Builder
+    {
+        $kata = '%'.addcslashes(mb_strtolower($kata), '%_\\').'%';
+
+        return $query->whereRaw('LOWER(CAST(nama_terjemahan AS CHAR)) LIKE ?', [$kata]);
     }
 
     public function images(): HasMany

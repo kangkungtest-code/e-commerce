@@ -48,7 +48,7 @@ class KatalogController extends Controller
 
         $query = $this->query()
             ->when($filter['kategori'] ?? null, fn (Builder $q, string $k) => $q->where('kategori', $k))
-            ->when($filter['q'] ?? null, fn (Builder $q, string $s) => $q->where('nama_terjemahan', 'like', '%'.addcslashes($s, '%_\\').'%'));
+            ->when($filter['q'] ?? null, fn (Builder $q, string $s) => Product::cariNama($q, $s));
 
         match ($filter['urut'] ?? 'terbaru') {
             'termurah' => $query->orderBy('variants_min_harga_idr'),
