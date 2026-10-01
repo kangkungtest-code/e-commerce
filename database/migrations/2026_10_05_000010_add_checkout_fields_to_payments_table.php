@@ -24,14 +24,12 @@ return new class extends Migration
             $table->timestamp('kadaluarsa_pada')->nullable()->after('dibayar_pada');
             $table->string('refund_id')->nullable()->after('kadaluarsa_pada');
             $table->string('catatan', 500)->nullable()->after('refund_id');
-            $table->index(['order_id', 'status']);
         });
     }
 
     public function down(): void
     {
         Schema::table('payments', function (Blueprint $table) {
-            $table->dropIndex(['order_id', 'status']);
             $table->dropColumn(['kurs_terpakai', 'jumlah_idr', 'url_bayar', 'data_bayar', 'id_capture', 'dibayar_pada', 'kadaluarsa_pada', 'refund_id', 'catatan']);
         });
     }
