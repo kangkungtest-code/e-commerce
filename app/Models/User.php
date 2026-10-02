@@ -48,7 +48,7 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->roles()->where('guard_name', 'admin')->exists();
+        return $this->adalahAdmin();
     }
 
     public function getFilamentName(): string
@@ -74,5 +74,22 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function perangkatAdmin(): HasMany
+    {
+        return $this->hasMany(PerangkatAdmin::class);
+    }
+
+    /** Staff = punya role di guard admin (dipakai panel web & API aplikasi admin). */
+    public function adalahAdmin(): bool
+    {
+        return $this->roles()->where('guard_name', 'admin')->exists();
+    }
+
+    /** Token FCM untuk channel notifikasi push. */
+    public function routeNotificationForFcm(): array
+    {
+        return $this->perangkatAdmin()->pluck('fcm_token')->all();
     }
 }

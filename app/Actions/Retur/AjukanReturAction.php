@@ -20,10 +20,14 @@ class AjukanReturAction
 
         $path = $foto ? app(ProductImageStorage::class)->store($foto, 'retur') : null;
 
-        return $order->returnRequests()->create([
+        $retur = $order->returnRequests()->create([
             'alasan' => $alasan,
             'foto_bukti' => $path,
             'status' => ReturnRequest::STATUS_DIAJUKAN,
         ]);
+
+        \App\Support\NotifikasiAdmin::returDiajukan($retur);
+
+        return $retur;
     }
 }

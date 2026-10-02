@@ -67,6 +67,13 @@ class UbahStatusOrderAction
             $order->user?->notify(new OrderDikirim($order));
         }
 
+        if ($ke === Order::STATUS_DIBAYAR) {
+            \App\Support\NotifikasiAdmin::pesananDibayar($order, $oleh);
+            \App\Support\NotifikasiAdmin::cekStokMenipis(
+                $order->items()->with('variant.product', 'variant.stocks')->get()->pluck('variant')->filter()
+            );
+        }
+
         return $order;
     }
 

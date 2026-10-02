@@ -76,6 +76,9 @@ class KonfirmasiPembayaranAction
                         : "Pembayaran {$metode} masuk dengan jumlah tidak cocok — cek manual",
                 ]);
                 Log::warning("Pembayaran {$payment->id} untuk order {$order->nomor} perlu ditinjau admin.");
+                \App\Support\NotifikasiAdmin::pembayaranPerluDicek($order, $cocok
+                    ? "Pembayaran {$metode} masuk setelah order {$order->status}"
+                    : "Pembayaran {$metode} masuk dengan jumlah tidak cocok");
             }
 
             return $payment;

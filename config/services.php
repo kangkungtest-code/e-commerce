@@ -54,6 +54,12 @@ return [
         'mode' => env('PAYPAL_MODE', 'sandbox'), // sandbox / live
     ],
 
+    // Notifikasi push aplikasi admin. Isi FIREBASE_CREDENTIALS dengan file JSON service account
+    // (Firebase console -> Project settings -> Service accounts) yang di-base64 jadi satu baris.
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+    ],
+
     'xendit' => [
         'secret_key' => env('XENDIT_SECRET_KEY'),
         'callback_token' => env('XENDIT_CALLBACK_TOKEN'),

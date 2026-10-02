@@ -114,6 +114,7 @@ class BuatOrderAction
         });
 
         $user->notify(new OrderDibuat($order));
+        \App\Support\NotifikasiAdmin::pesananBaru($order);
 
         return $order;
     }

@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Global (termasuk panel admin Filament): dev/demo tidak boleh masuk Google.
         $middleware->append(\App\Http\Middleware\LarangIndeks::class);
 
+        $middleware->alias([
+            'admin.api' => \App\Http\Middleware\AdminApi::class,
+            'izin' => \App\Http\Middleware\IzinApi::class,
+        ]);
+
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->validateCsrfTokens(except: ['webhook/*']);
         $middleware->redirectUsersTo(fn () => route('akun'));
@@ -28,4 +33,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // API: kesalahan bisnis (status tidak bisa diubah, stok di bawah reserve, ...) -> 422 dengan pesan siap tampil.
+        $exceptions->render(function (\App\Exceptions\TokoException|\InvalidArgumentException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+        });
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => 'Sesi berakhir atau belum masuk. Silakan masuk lagi.'], 401);
+            }
+        });
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+            }
+        });
     })->create();

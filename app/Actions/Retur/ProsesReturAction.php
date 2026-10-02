@@ -50,6 +50,7 @@ class ProsesReturAction
         }
 
         $r->update(['resi_kembali' => trim($resi)]);
+        \App\Support\NotifikasiAdmin::resiReturDiisi($r);
 
         return $r;
     }
