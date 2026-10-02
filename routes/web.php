@@ -20,6 +20,7 @@ Route::get('/', [KatalogController::class, 'home'])->name('home');
 Route::get('/produk', [KatalogController::class, 'index'])->name('produk.index');
 Route::get('/produk/{product}', [KatalogController::class, 'show'])->name('produk.show');
 Route::get('/faq', [KatalogController::class, 'faq'])->name('faq');
+Route::get('/kebijakan/{halaman}', [KatalogController::class, 'kebijakan'])->name('kebijakan');
 
 Route::get('/chatbot', [ChatbotController::class, 'mulai'])->middleware('throttle:30,1')->name('chatbot');
 Route::post('/chatbot', [ChatbotController::class, 'tanya'])->middleware('throttle:30,1');

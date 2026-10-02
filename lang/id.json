@@ -265,5 +265,9 @@
     "Use the tracking number below on the courier's website to follow the package.": "Lacak paketmu dengan nomor resi di bawah ini di situs kurir.",
     "Order completed": "Pesanan selesai",
     "Thanks for shopping with us!": "Terima kasih sudah berbelanja!",
-    "Paid :amount via :method on :date": "Dibayar :amount lewat :method pada :date"
+    "Paid :amount via :method on :date": "Dibayar :amount lewat :method pada :date",
+    "Last updated :date": "Terakhir diperbarui :date",
+    "Store policies": "Kebijakan toko",
+    "By placing your order you agree to our :a and :b.": "Dengan membuat pesanan, kamu menyetujui :a dan :b kami.",
+    "By creating an account you agree to our :a and :b.": "Dengan membuat akun, kamu menyetujui :a dan :b kami."
 }

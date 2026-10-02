@@ -17,6 +17,7 @@ class RoleAndPermissionSeeder extends Seeder
         'order.ubah_status',
         'retur.kelola',
         'faq.kelola',
+        'kebijakan.kelola',
         'kurs.kelola',
         'ongkir.kelola',
         'laporan.lihat',

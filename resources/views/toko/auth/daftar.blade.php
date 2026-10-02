@@ -15,6 +15,7 @@
             @include('toko.partials.field', ['nama' => 'password_confirmation', 'label' => __('Repeat password'), 'tipe' => 'password', 'attr' => 'autocomplete="new-password" required'])
 
             <button type="submit" class="tombol tombol-lebar">{{ __('Create account') }}</button>
+            @include('toko.partials.setuju', ['kalimat' => 'By creating an account you agree to our :a and :b.', 'slug' => ['terms', 'privacy']])
         </form>
 
         <p class="alih">{{ __('Already have an account?') }} <a href="{{ route('login') }}">{{ __('Sign in') }}</a></p>

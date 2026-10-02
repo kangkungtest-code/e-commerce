@@ -59,6 +59,7 @@
                     <input type="hidden" name="address_id" value="{{ $terpilih?->id }}">
                     <button type="submit" class="tombol tombol-lebar" @disabled(! $terpilih || $ongkir === null || $ada_masalah)>{{ __('Place order') }}</button>
                 </form>
+                @include('toko.partials.setuju', ['kalimat' => 'By placing your order you agree to our :a and :b.', 'slug' => ['terms', 'returns']])
                 <p class="catatan">{{ __('Your items are held for :hours hours while you pay. Payment options appear on the next page.', ['hours' => $batasJam]) }}</p>
             </aside>
         </div>

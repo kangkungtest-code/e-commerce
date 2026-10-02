@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             StockLocationSeeder::class,
             AdminUserSeeder::class,
+            KebijakanSeeder::class,
         ]);
 
         // Katalog contoh hanya untuk laptop & server dev/demo, tidak untuk production.

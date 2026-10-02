@@ -345,7 +345,8 @@ select { padding-right: 2rem; appearance: none;
 .footer { border-top: 1px solid var(--line); margin-top: clamp(2rem, 6vw, 4rem); }
 .footer-inner { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: baseline; justify-content: space-between; padding-block: 2rem; font-size: .9375rem; color: var(--ink-soft); }
 .footer-inner p { margin: 0; }
-.footer-tautan { display: flex; gap: 1.25rem; }
+.footer-tautan { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
+.footer-tautan a { white-space: nowrap; }
 .faq-kontak { margin-top: 2.5rem; }
 
 /* ---------- Header: akun & keranjang ---------- */
@@ -627,3 +628,15 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
 }
 .galeri-thumb li[hidden] { display: none; }
 .galeri-thumb[hidden] { display: none; }
+
+/* Halaman kebijakan (isi Markdown dari admin) */
+.teks-kebijakan { margin-top: 1.5rem; line-height: 1.7; }
+.teks-kebijakan h2 { font-size: 1.25rem; margin: 2rem 0 .5rem; }
+.teks-kebijakan h3 { font-size: 1.05rem; margin: 1.5rem 0 .4rem; }
+.teks-kebijakan p, .teks-kebijakan ul, .teks-kebijakan ol { margin: 0 0 1rem; }
+.teks-kebijakan ul, .teks-kebijakan ol { padding-left: 1.25rem; }
+.teks-kebijakan li { margin-bottom: .35rem; }
+.teks-kebijakan a { color: var(--kangkung); }
+.kebijakan-lain { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+.kebijakan-lain a[aria-current] { font-weight: 600; text-decoration: none; color: var(--ink); }
+.catatan-setuju { font-size: .875rem; color: var(--ink-soft); margin-top: .75rem; }

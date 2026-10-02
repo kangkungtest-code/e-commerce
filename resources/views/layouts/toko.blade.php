@@ -84,6 +84,9 @@
             <p>{{ __('Prices shown in :currency. Converted from rupiah at the store\'s daily rate.', ['currency' => \App\Support\TampilanProduk::mataUang()]) }}</p>
             <p class="footer-tautan">
                 <a href="{{ route('faq') }}">{{ __('FAQ') }}</a>
+                @foreach (\App\Models\HalamanKebijakan::tautan() as $kb)
+                    <a href="{{ $kb['url'] }}">{{ $kb['judul'] }}</a>
+                @endforeach
                 @foreach (\App\Support\KontakAdmin::tautan() as $k)
                     <a href="{{ $k['url'] }}" target="_blank" rel="noopener">{{ $k['jenis'] === 'wa' ? 'WhatsApp' : 'LINE' }}</a>
                 @endforeach

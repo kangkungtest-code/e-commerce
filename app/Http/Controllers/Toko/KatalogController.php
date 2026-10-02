@@ -81,6 +81,16 @@ class KatalogController extends Controller
         ]);
     }
 
+    public function kebijakan(\App\Models\HalamanKebijakan $halaman): View
+    {
+        abort_unless($halaman->is_active, 404);
+
+        return view('toko.kebijakan', [
+            'h' => $halaman,
+            'lain' => \App\Models\HalamanKebijakan::tautan(),
+        ]);
+    }
+
     public function faq(): View
     {
         return view('toko.faq', [
