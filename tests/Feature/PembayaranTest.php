@@ -101,6 +101,44 @@ class PembayaranTest extends TestCase
             ->assertSee('Pay now')->assertSee('$13.20')->assertSee('Rp220.000')->assertSee('Charged in USD');
     }
 
+    public function test_simulasi_bayar_xendit_mode_test(): void
+    {
+        $this->fakeXendit();
+        Http::fake(['api.xendit.co/v3/payment_requests/pr-123/simulate' => Http::response(['status' => 'PENDING'])]);
+        $order = $this->order();
+
+        $this->actingAs($this->user, 'web')->post(route('akun.pesanan.bayar', $order), ['metode' => 'xendit_qris']);
+        $this->get(route('akun.pesanan.show', $order))
+            ->assertSee('Simulasikan bayar')->assertSee('belum pernah ada yang masuk');
+
+        $this->from(route('akun.pesanan.show', $order))
+            ->post(route('akun.pesanan.simulasi', $order))
+            ->assertRedirect(route('akun.pesanan.show', $order))
+            ->assertSessionHas('status');
+
+        Http::assertSent(fn (HttpRequest $r) => $r->url() === 'https://api.xendit.co/v3/payment_requests/pr-123/simulate'
+            && $r['amount'] === 220000);
+
+        // Xendit lalu mengirim webhook -> tercatat & order dibayar.
+        $this->webhookXendit(Payment::firstOrFail())->assertOk();
+        $this->assertSame(Order::STATUS_DIBAYAR, $order->fresh()->status);
+        $this->assertStringContainsString('diterima, pembayaran berhasil', \App\Models\Pengaturan::ambil('webhook_terakhir.xendit'));
+    }
+
+    public function test_simulasi_tidak_ada_untuk_kunci_live_atau_orang_lain(): void
+    {
+        $this->fakeXendit();
+        $order = $this->order();
+        $this->actingAs($this->user, 'web')->post(route('akun.pesanan.bayar', $order), ['metode' => 'xendit_qris']);
+
+        $this->actingAs($this->pembeli(), 'web')
+            ->post(route('akun.pesanan.simulasi', $order))->assertNotFound();
+
+        config(['services.xendit.secret_key' => 'xnd_production_abc']);
+        $this->actingAs($this->user, 'web')
+            ->post(route('akun.pesanan.simulasi', $order))->assertNotFound();
+    }
+
     public function test_order_usd_dibayar_qris_memakai_total_idr(): void
     {
         $usd = $this->order('USD');

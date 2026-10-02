@@ -69,6 +69,7 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/akun/pesanan/{order}/batal', [PesananController::class, 'batal'])->name('akun.pesanan.batal');
     Route::post('/akun/pesanan/{order}/retur', [PesananController::class, 'ajukanRetur'])->middleware('throttle:5,1')->name('akun.pesanan.retur');
     Route::post('/akun/pesanan/{order}/bayar', [PembayaranController::class, 'bayar'])->middleware('throttle:10,1')->name('akun.pesanan.bayar');
+    Route::post('/akun/pesanan/{order}/simulasi', [PembayaranController::class, 'simulasi'])->middleware('throttle:10,1')->name('akun.pesanan.simulasi');
     Route::get('/akun/pesanan/{order}/status', [PembayaranController::class, 'status'])->middleware('throttle:30,1')->name('akun.pesanan.status');
     Route::get('/bayar/paypal/{payment}/kembali', [PembayaranController::class, 'paypalKembali'])->name('bayar.paypal.kembali');
     Route::get('/bayar/paypal/{payment}/batal', [PembayaranController::class, 'paypalBatal'])->name('bayar.paypal.batal');

@@ -601,3 +601,8 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
     .cari, .cari input[type="search"] { width: 100%; }
     .cari input[type="search"] { flex: 1 1 100%; }
 }
+
+/* Kotak uji coba pembayaran (hanya dev/demo dengan kunci test) */
+.blok-uji { margin-top: 1rem; padding: 1rem; border: 2px dashed #b8860b; border-radius: 6px; background: #fff8e1; }
+.blok-uji p { margin: 0 0 .5rem; }
+.blok-uji form { margin-bottom: .5rem; }

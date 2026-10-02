@@ -22,6 +22,24 @@
             <p class="angka-besar">{{ $a['jumlah'] }}</p>
             <p class="redup" data-teks-status>{{ __('This page updates automatically once the payment arrives.') }}</p>
         </div>
+        @if ($b['simulasi'])
+            {{-- Hanya muncul di dev/demo dengan kunci test Xendit; tidak diterjemahkan. --}}
+            <div class="blok-uji">
+                <p><strong>Mode test Xendit</strong> — QR / VA ini tidak bisa dibayar dengan aplikasi sungguhan.</p>
+                <form method="post" action="{{ route('akun.pesanan.simulasi', $o['nomor']) }}">
+                    @csrf
+                    <button type="submit" class="tombol tombol-garis tombol-kecil">Simulasikan bayar</button>
+                </form>
+                <p class="redup">
+                    Webhook Xendit terakhir:
+                    @if ($b['simulasi']['webhook'])
+                        {{ $b['simulasi']['webhook']['waktu']->timezone(config('toko.zona_waktu'))->format('d M H:i:s') }} — {{ $b['simulasi']['webhook']['hasil'] }}
+                    @else
+                        belum pernah ada yang masuk
+                    @endif
+                </p>
+            </div>
+        @endif
         <details class="ganti-metode">
             <summary>{{ __('Use a different payment method') }}</summary>
             @include('toko.akun._pilih-metode', ['o' => $o, 'b' => $b])

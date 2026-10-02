@@ -28,8 +28,18 @@ class TampilanPembayaran
             'pilihan' => $bisaBayar ? MetodePembayaran::pilihan($o) : [],
             'bank' => config('services.xendit.va_banks'),
             'aktif' => $aktif ? self::tagihan($aktif) : null,
+            'simulasi' => $aktif && self::bisaSimulasi($aktif) ? [
+                'webhook' => \App\Http\Controllers\WebhookPembayaranController::terakhir('xendit'),
+            ] : null,
             'lunas' => $o->payments()->where('status', Payment::BERHASIL)->latest('dibayar_pada')->first()?->only(['gateway', 'mata_uang', 'jumlah']),
         ];
+    }
+
+    private static function bisaSimulasi(Payment $p): bool
+    {
+        $g = MetodePembayaran::gateway($p->gateway);
+
+        return $g instanceof \App\Payments\XenditGateway && $g->bisaSimulasi() && $p->transaksi_id_eksternal;
     }
 
     private static function tagihan(Payment $p): array

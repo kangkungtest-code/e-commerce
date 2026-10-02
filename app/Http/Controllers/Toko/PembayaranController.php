@@ -9,7 +9,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Payments\GatewayException;
+use App\Payments\MetodePembayaran;
 use App\Payments\PayPalGateway;
+use App\Payments\XenditGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,6 +72,31 @@ class PembayaranController extends Controller
 
         return redirect()->route('akun.pesanan.show', $payment->order)
             ->with('status', __('Payment cancelled. You can choose a payment method again.'));
+    }
+
+    /** Mode test Xendit: minta Xendit mensimulasikan pembayaran tagihan yang sedang aktif. */
+    public function simulasi(Request $request, Order $order): RedirectResponse
+    {
+        abort_unless($order->user_id === $request->user()->id, 404);
+
+        $payment = $order->payments()
+            ->where('status', Payment::PENDING)
+            ->whereIn('gateway', [Payment::GATEWAY_QRIS, Payment::GATEWAY_VA])
+            ->whereNotNull('transaksi_id_eksternal')
+            ->latest()->first();
+
+        $gateway = $payment ? MetodePembayaran::gateway($payment->gateway) : null;
+        abort_unless($gateway instanceof XenditGateway && $gateway->bisaSimulasi(), 404);
+
+        try {
+            $gateway->simulasi($payment);
+        } catch (GatewayException $e) {
+            Log::error("Simulasi Xendit {$payment->id} gagal: ".$e->getMessage());
+
+            return back()->withErrors(['order' => 'Simulasi gagal: '.$e->getMessage()]);
+        }
+
+        return back()->with('status', 'Simulasi dikirim ke Xendit. Halaman ini berubah sendiri setelah notifikasi Xendit masuk (biasanya beberapa detik).');
     }
 
     /** Dipakai halaman order untuk mengecek apakah pembayaran QRIS/VA sudah masuk. */

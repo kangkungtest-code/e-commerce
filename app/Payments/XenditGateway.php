@@ -120,6 +120,34 @@ class XenditGateway implements PaymentGateway
         );
     }
 
+    /** Simulasi bayar hanya untuk kunci test dan di luar production. */
+    public function bisaSimulasi(): bool
+    {
+        return $this->aktif()
+            && ! app()->isProduction()
+            && str_starts_with((string) config('services.xendit.secret_key'), 'xnd_development_');
+    }
+
+    /**
+     * Minta Xendit mensimulasikan pembayaran (mode test). Hasilnya datang lewat
+     * webhook payment.capture, sama persis seperti pembayaran sungguhan.
+     */
+    public function simulasi(Payment $payment): void
+    {
+        if (! $this->bisaSimulasi() || ! $payment->transaksi_id_eksternal) {
+            throw new GatewayException('Simulasi pembayaran tidak tersedia.');
+        }
+
+        try {
+            $this->http()
+                ->post("/v3/payment_requests/{$payment->transaksi_id_eksternal}/simulate", [
+                    'amount' => (int) round((float) $payment->jumlah),
+                ])->throw();
+        } catch (RequestException $e) {
+            throw new GatewayException('Simulasi Xendit gagal: '.$e->response->body(), previous: $e);
+        }
+    }
+
     public function refund(Payment $payment, string $alasan): string
     {
         try {
