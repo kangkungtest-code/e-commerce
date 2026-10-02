@@ -3,8 +3,33 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ isset($judul) ? $judul.' | ' : '' }}{{ config('toko.nama') }}</title>
-    @isset($deskripsi)<meta name="description" content="{{ $deskripsi }}">@endisset
+    @php($s = \App\Support\Seo::untuk(($seo ?? []) + (isset($deskripsi) ? ['deskripsi' => $deskripsi] : []), $judul ?? null))
+    <title>{{ $s['judul'] }}</title>
+    <meta name="description" content="{{ $s['deskripsi'] }}">
+    @if ($s['noindex'])
+        <meta name="robots" content="noindex, nofollow">
+    @else
+        <link rel="canonical" href="{{ $s['kanonik'] }}">
+    @endif
+    <meta property="og:site_name" content="{{ config('toko.nama') }}">
+    <meta property="og:type" content="{{ $s['tipe'] }}">
+    <meta property="og:title" content="{{ $s['judul_og'] }}">
+    <meta property="og:description" content="{{ $s['deskripsi'] }}">
+    <meta property="og:url" content="{{ $s['kanonik'] }}">
+    <meta property="og:locale" content="{{ $s['locale'] }}">
+    @foreach ($s['locale_lain'] as $l)<meta property="og:locale:alternate" content="{{ $l }}">
+    @endforeach
+    @if ($s['gambar'])
+        <meta property="og:image" content="{{ $s['gambar'] }}">
+        <meta property="og:image:width" content="{{ \App\Support\GambarOg::LEBAR }}">
+        <meta property="og:image:height" content="{{ \App\Support\GambarOg::TINGGI }}">
+        <meta name="twitter:card" content="summary_large_image">
+    @else
+        <meta name="twitter:card" content="summary">
+    @endif
+    @foreach ($s['jsonld'] as $ld)
+        <script type="application/ld+json">{!! json_encode($ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+    @endforeach
     <link rel="preload" href="{{ asset('fonts/bricolage/bricolage-grotesque-latin-standard-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('css/toko.css') }}?v={{ filemtime(public_path('css/toko.css')) }}">
     <script src="{{ asset('js/toko.js') }}?v={{ filemtime(public_path('js/toko.js')) }}" defer></script>

@@ -1,4 +1,4 @@
-@extends('layouts.toko', ['judul' => $p['nama'], 'deskripsi' => \Illuminate\Support\Str::limit($p['deskripsi'] ?? '', 150)])
+@extends('layouts.toko', ['judul' => $p['nama'], 'seo' => $seo + ['deskripsi' => $p['deskripsi']]])
 
 @section('isi')
     <div class="wrap halaman">

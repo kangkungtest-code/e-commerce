@@ -1,4 +1,4 @@
-@extends('layouts.toko', ['deskripsi' => __('Everyday basics in honest colors.')])
+@extends('layouts.toko')
 
 @section('isi')
     <section class="hero wrap">

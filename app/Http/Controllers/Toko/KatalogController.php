@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Toko;
 
+use App\Support\GambarOg;
+use App\Support\Seo;
 use App\Http\Controllers\Controller;
 use App\Models\Faq;
 use App\Models\Product;
@@ -35,6 +37,10 @@ class KatalogController extends Controller
             'produk' => $produk->map(fn (Product $p) => TampilanProduk::kartu($p)),
             'mozaik' => $produk->take(6)->map(fn (Product $p) => TampilanProduk::kartu($p)),
             'kategori' => $this->kategori(),
+            'seo' => [
+                'gambar' => GambarOg::toko($produk),
+                'jsonld' => [Seo::jsonldToko()],
+            ],
         ]);
     }
 
@@ -63,16 +69,40 @@ class KatalogController extends Controller
             'kartu' => $produk->getCollection()->map(fn (Product $p) => TampilanProduk::kartu($p)),
             'kategori' => $this->kategori(),
             'filter' => $filter + ['urut' => 'terbaru'],
+            'seo' => [
+                // Urutan & halaman tidak membuat halaman baru di mata Google; kategori iya.
+                'kanonik' => route('produk.index', array_filter([
+                    'kategori' => $filter['kategori'] ?? null,
+                    'page' => $produk->currentPage() > 1 ? $produk->currentPage() : null,
+                ])),
+                'noindex' => filled($filter['q'] ?? null) || $produk->isEmpty(),
+                'gambar' => GambarOg::toko($produk->getCollection()),
+                'deskripsi' => isset($filter['kategori'])
+                    ? __(':category from :store. Prices in rupiah, US dollars or Taiwan dollars.', ['category' => __($filter['kategori']), 'store' => config('toko.nama')])
+                    : null,
+            ],
         ]);
     }
 
-    public function show(Product $product): View
+    public function show(Request $request, Product $product): View|\Illuminate\Http\RedirectResponse
     {
         abort_unless($product->is_active, 404);
+
+        // Alamat lama (UUID) -> alamat kanonik berbasis slug.
+        if ($request->route()->originalParameter('product') !== $product->slug) {
+            return redirect()->route('produk.show', $product, 301);
+        }
         $product->load(['images', 'variants.stocks']);
 
+        $detail = TampilanProduk::detail($product);
+
         return view('toko.produk.show', [
-            'p' => TampilanProduk::detail($product),
+            'p' => $detail,
+            'seo' => [
+                'tipe' => 'product',
+                'gambar' => GambarOg::produk($product),
+                'jsonld' => [Seo::jsonldProduk($product, $detail, $product->images->map->url()->all())],
+            ],
             'terkait' => $this->query()
                 ->where('id', '!=', $product->id)
                 ->when($product->kategori, fn (Builder $q, string $k) => $q->where('kategori', $k))

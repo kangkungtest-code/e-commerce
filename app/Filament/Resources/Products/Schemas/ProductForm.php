@@ -55,6 +55,14 @@ class ProductForm
                         Toggle::make('is_active')
                             ->label('Tampil di toko')
                             ->default(true),
+                        TextInput::make('slug')
+                            ->label('Alamat halaman')
+                            ->prefix('/produk/')
+                            ->helperText('Kosongkan untuk dibuat otomatis dari nama English. Sebaiknya tidak diubah setelah toko ramai, karena tautan yang sudah dibagikan ikut berubah.')
+                            ->maxLength(180)
+                            ->rule('regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/')
+                            ->validationMessages(['regex' => 'Hanya huruf kecil, angka, dan tanda hubung (-).'])
+                            ->unique(ignoreRecord: true),
                     ]),
 
                 Section::make('Foto')

@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SetPreferensiToko::class,
         ]);
+        // Global (termasuk panel admin Filament): dev/demo tidak boleh masuk Google.
+        $middleware->append(\App\Http\Middleware\LarangIndeks::class);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->validateCsrfTokens(except: ['webhook/*']);

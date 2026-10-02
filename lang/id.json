@@ -269,5 +269,7 @@
     "Last updated :date": "Terakhir diperbarui :date",
     "Store policies": "Kebijakan toko",
     "By placing your order you agree to our :a and :b.": "Dengan membuat pesanan, kamu menyetujui :a dan :b kami.",
-    "By creating an account you agree to our :a and :b.": "Dengan membuat akun, kamu menyetujui :a dan :b kami."
+    "By creating an account you agree to our :a and :b.": "Dengan membuat akun, kamu menyetujui :a dan :b kami.",
+    ":store ships clothing from Indonesia.": ":store mengirim pakaian dari Indonesia.",
+    ":category from :store. Prices in rupiah, US dollars or Taiwan dollars.": ":category dari :store. Harga dalam rupiah, dolar AS, atau dolar Taiwan."
 }

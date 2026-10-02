@@ -17,11 +17,15 @@ class ProductImage extends Model
     protected static function booted(): void
     {
         // File ikut terhapus kalau foto dihapus / diganti, supaya tidak ada file yatim di disk.
-        static::deleted(fn (self $image) => app(ProductImageStorage::class)->delete($image->path));
+        static::deleted(function (self $image) {
+            app(ProductImageStorage::class)->delete($image->path);
+            Storage::disk(config('toko.product_images.disk'))->delete(\App\Support\GambarOg::pathFoto($image));
+        });
 
         static::updated(function (self $image) {
             if ($image->wasChanged('path')) {
                 app(ProductImageStorage::class)->delete($image->getOriginal('path'));
+                Storage::disk(config('toko.product_images.disk'))->delete(\App\Support\GambarOg::pathFoto($image));
             }
         });
     }
