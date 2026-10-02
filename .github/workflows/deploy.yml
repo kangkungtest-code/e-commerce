@@ -130,7 +130,8 @@ jobs:
             echo "db=toko_dev"        >> "$GITHUB_OUTPUT"
             echo "env=dev"            >> "$GITHUB_OUTPUT"
             echo "debug=true"         >> "$GITHUB_OUTPUT"
-            echo "url=http://${{ secrets.SERVER_HOST }}:8080" >> "$GITHUB_OUTPUT"
+            # Domain dev (DuckDNS) + HTTPS dipasang oleh provision.yml.
+            echo "url=https://kangkungdev.duckdns.org" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Lewati (secrets belum diisi)
