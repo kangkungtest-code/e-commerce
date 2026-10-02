@@ -6,7 +6,7 @@ name: Provision server
 # Untuk menjalankan ulang: ubah baris PROVISION_REV di bawah lalu push.
 # Aman dijalankan ulang (idempotent).
 #
-# PROVISION_REV: 6
+# PROVISION_REV: 7
 #
 # Secrets yang dibutuhkan (Settings -> Secrets and variables -> Actions,
 # sebagai REPOSITORY secret):
@@ -230,7 +230,7 @@ jobs:
               local name="$1" domain="$2" root="$3"
               local cert="/etc/letsencrypt/live/${domain}"
               {
-                if [ -f "${cert}/fullchain.pem" ]; then
+                if sudo test -f "${cert}/fullchain.pem"; then
                   echo "server {"
                   echo "    listen 80;"
                   echo "    listen [::]:80;"
@@ -273,7 +273,7 @@ jobs:
             sudo mkdir -p /etc/letsencrypt/renewal-hooks/deploy
             printf '#!/bin/sh\nsystemctl reload nginx\n' | sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx >/dev/null
             sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
-            if [ ! -f "/etc/letsencrypt/live/${DEV_DOMAIN}/fullchain.pem" ]; then
+            if ! sudo test -f "/etc/letsencrypt/live/${DEV_DOMAIN}/fullchain.pem"; then
               # Webroot: file tantangan ditaruh di public/.well-known (dilayani Nginx port 80).
               sudo mkdir -p /var/www/dev/public/.well-known/acme-challenge
               if sudo certbot certonly --webroot -w /var/www/dev/public -d "$DEV_DOMAIN" \
