@@ -304,6 +304,21 @@ jobs:
                      -w '%{http_code} %{redirect_url}' "$TOKO_APP_URL_VAL/" 2>&1 || true)"
               echo "::notice title=Cek ${TOKO_APP_URL_VAL}::${CEK}"
 
+              # Cek kunci Xendit tanpa menampilkan isinya.
+              # 401 = kunci salah; 200/403 = kunci dikenali Xendit.
+              if [ -n "${TOKO_XENDIT_SECRET_KEY:-}" ]; then
+                case "$TOKO_XENDIT_SECRET_KEY" in
+                  xnd_development_*) JENIS="test" ;;
+                  xnd_production_*)  JENIS="LIVE (ditolak di dev/demo)" ;;
+                  *)                 JENIS="format tidak dikenal" ;;
+                esac
+                KODE="$(curl -s -o /dev/null --max-time 20 -u "${TOKO_XENDIT_SECRET_KEY}:" -w '%{http_code}' https://api.xendit.co/balance || true)"
+                TOKEN="kosong"; [ -n "${TOKO_XENDIT_CALLBACK_TOKEN:-}" ] && TOKEN="terisi"
+                echo "::notice title=Xendit::key ${JENIS}, respons API ${KODE} (401=kunci salah), callback token ${TOKEN}"
+              else
+                echo "::notice title=Xendit::XENDIT_SECRET_KEY belum terbaca"
+              fi
+
               echo "==> Deploy selesai: $TOKO_APP_URL_VAL"
             }
 
