@@ -303,8 +303,6 @@ jobs:
               CEK="$(curl -sS -o /dev/null --max-time 20 --resolve "${HOSTNYA}:443:127.0.0.1" \
                      -w '%{http_code} %{redirect_url}' "$TOKO_APP_URL_VAL/" 2>&1 || true)"
               echo "::notice title=Cek ${TOKO_APP_URL_VAL}::${CEK}"
-              DIAG="$( { sudo -n ls /etc/letsencrypt/live 2>&1; sudo -n ss -tlnp 2>&1 | grep -E ':(80|443|8080) '; ls /etc/nginx/sites-enabled; sudo -n nginx -t 2>&1 | tail -2; } | tr '\n' '|' )"
-              echo "::notice title=Diagnosa server::${DIAG}"
 
               echo "==> Deploy selesai: $TOKO_APP_URL_VAL"
             }
