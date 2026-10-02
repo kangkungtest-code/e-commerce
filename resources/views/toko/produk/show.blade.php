@@ -11,7 +11,7 @@
         </nav>
 
         <div class="produk">
-            <div class="galeri" data-galeri>
+            <div class="galeri" data-galeri data-opsi-warna="{{ $p['opsi_warna'] }}">
                 <div class="galeri-utama">
                     @if ($p['foto'])
                         <img src="{{ $p['foto'][0]['url'] }}" alt="{{ $p['nama'] }}" width="1600" height="1600" data-galeri-utama>
@@ -22,7 +22,7 @@
                 @if (count($p['foto']) > 1)
                     <ul class="galeri-thumb" aria-label="{{ __('Product photos') }}">
                         @foreach ($p['foto'] as $i => $f)
-                            <li>
+                            <li @if ($f['warna']) data-warna="{{ $f['warna'] }}" @endif>
                                 <button type="button" data-foto="{{ $f['url'] }}" @if ($i === 0) aria-current="true" @endif aria-label="{{ __('Show photo :n', ['n' => $i + 1]) }}">
                                     <img src="{{ $f['thumb'] }}" alt="" width="400" height="400" loading="lazy">
                                 </button>

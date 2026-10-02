@@ -68,12 +68,20 @@ class TampilanProduk
 
         $awal = $varian->firstWhere(fn ($v) => $v['stok'] > 0) ?? $varian->first();
 
+        // Foto warna varian awal ditaruh paling depan supaya cocok dengan pilihan yang tercentang.
+        $warnaAwal = $awal ? ($awal['opsi']->{Product::OPSI_WARNA} ?? null) : null;
+        $foto = $p->images
+            ->sortBy(fn (ProductImage $i) => [$warnaAwal && $i->warna === $warnaAwal ? 0 : 1, $i->urutan])
+            ->values()
+            ->map(fn (ProductImage $i) => ['url' => $i->url(), 'thumb' => $i->thumbUrl(), 'warna' => $i->warna]);
+
         return [
             'id' => $p->id,
             'nama' => $p->getTranslation('nama_terjemahan', $locale),
             'deskripsi' => $p->getTranslation('deskripsi_terjemahan', $locale),
             'kategori' => $p->kategori,
-            'foto' => $p->images->map(fn (ProductImage $i) => ['url' => $i->url(), 'thumb' => $i->thumbUrl()])->all(),
+            'foto' => $foto->all(),
+            'opsi_warna' => Product::OPSI_WARNA,
             'opsi' => self::opsi($p->variants)->values()->all(),
             'varian' => $varian->all(),
             'awal' => $awal,

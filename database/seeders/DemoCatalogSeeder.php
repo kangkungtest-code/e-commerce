@@ -76,7 +76,9 @@ class DemoCatalogSeeder extends Seeder
     private function produk(array $p, array $palet): bool
     {
         $skuPertama = $this->sku($p['kode'], $p['warna'][0], $p['ukuran'][0]);
-        if (ProductVariant::query()->where('sku', $skuPertama)->exists()) {
+        if ($ada = ProductVariant::query()->where('sku', $skuPertama)->first()) {
+            $this->isiWarnaFoto($ada->product, $p['warna'], $palet);
+
             return false;
         }
 
@@ -104,12 +106,29 @@ class DemoCatalogSeeder extends Seeder
 
                 $product->images()->create([
                     'path' => $this->fotoPlaceholder($p['bentuk'], $palet[$kodeWarna][3]),
+                    'warna' => $palet[$kodeWarna][0],
                     'urutan' => $wi + 1,
                 ]);
             }
         });
 
         return true;
+    }
+
+    /**
+     * Produk demo lama (sebelum ada kolom warna di foto): satu foto per warna,
+     * urut sesuai daftar warna. Hanya diisi kalau semua fotonya belum berwarna.
+     */
+    private function isiWarnaFoto(?Product $product, array $kodeWarna, array $palet): void
+    {
+        $foto = $product?->images()->orderBy('urutan')->get();
+        if (! $foto || $foto->count() !== count($kodeWarna) || $foto->contains(fn ($f) => $f->warna !== null)) {
+            return;
+        }
+
+        foreach ($foto->values() as $i => $f) {
+            $f->update(['warna' => $palet[$kodeWarna[$i]][0]]);
+        }
     }
 
     private function sku(string $kode, string $warna, string $ukuran): string

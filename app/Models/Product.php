@@ -51,4 +51,21 @@ class Product extends Model
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    /** Nama opsi varian yang dipakai untuk mengaitkan foto ke warna. */
+    public const OPSI_WARNA = 'Warna';
+
+    /** Nilai warna yang dipakai varian produk ini, urut sesuai kemunculan. */
+    public function daftarWarna(): array
+    {
+        return $this->variants
+            ->map(fn (ProductVariant $v) => $v->opsi[self::OPSI_WARNA] ?? null)
+            ->filter()->unique()->values()->all();
+    }
+
+    /** Foto untuk warna tertentu; kalau tidak ada, foto pertama produk. */
+    public function fotoUntuk(?string $warna): ?ProductImage
+    {
+        return ($warna ? $this->images->firstWhere('warna', $warna) : null) ?? $this->images->first();
+    }
 }

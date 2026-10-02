@@ -86,6 +86,30 @@ class StorefrontTest extends TestCase
         $res->assertSee('Color')->assertSee('Size')->assertSee('"sku":"K-M"', false)->assertSee('"stok":0', false);
     }
 
+    public function test_foto_per_warna(): void
+    {
+        app(BuatVarianAction::class)->execute($this->kaos, ['sku' => 'K-PUTIH-M', 'opsi' => ['Warna' => 'Putih', 'Ukuran' => 'M'], 'harga_idr' => 100000, 'berat_gram' => 200, 'stok_awal' => 2]);
+        $this->kaos->images()->create(['path' => 'produk/putih.webp', 'warna' => 'Putih', 'urutan' => 1]);
+        $this->kaos->images()->create(['path' => 'produk/umum.webp', 'warna' => null, 'urutan' => 2]);
+        $this->kaos->images()->create(['path' => 'produk/hitam.webp', 'warna' => 'Hitam', 'urutan' => 3]);
+        $kaos = $this->kaos->fresh(['images', 'variants']);
+
+        $this->assertSame(['Hitam', 'Putih'], $kaos->daftarWarna());
+        $this->assertSame('produk/putih.webp', $kaos->fotoUntuk('Putih')->path);
+        $this->assertSame('produk/putih.webp', $kaos->fotoUntuk(null)->path); // tanpa warna: foto pertama
+        $this->assertSame('produk/putih.webp', $kaos->fotoUntuk('Merah')->path);
+
+        // Varian awal (Hitam, ada stok) -> foto hitam tampil paling depan.
+        $html = $this->get(route('produk.show', $this->kaos))->assertOk()
+            ->assertSee('data-opsi-warna="Warna"', false)->getContent();
+        $this->assertLessThan(strpos($html, 'data-warna="Putih"'), strpos($html, 'data-warna="Hitam"'));
+        $this->assertStringContainsString('hitam.webp" alt="Black T-Shirt"', $html);
+
+        // Keranjang memakai foto sesuai warna varian.
+        $this->post(route('keranjang.tambah'), ['product_id' => $this->kaos->id, 'opsi' => ['Warna' => 'Putih', 'Ukuran' => 'M'], 'qty' => 1]);
+        $this->get(route('keranjang'))->assertSee('putih-thumb.webp', false)->assertDontSee('hitam-thumb.webp', false);
+    }
+
     public function test_bahasa_kosong_memakai_english(): void
     {
         $this->withSession(['locale' => 'zh_TW'])

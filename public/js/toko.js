@@ -70,8 +70,28 @@
             }
         };
 
-        radios.forEach((r) => r.addEventListener('change', render));
+        // Foto per warna: tampilkan foto warna terpilih (+ foto umum), foto utama = foto pertama warna itu.
+        const galeri = document.querySelector('[data-galeri]');
+        const gantiFoto = () => {
+            if (!galeri) return;
+            const warna = terpilih()[galeri.dataset.opsiWarna];
+            const item = [...galeri.querySelectorAll('.galeri-thumb li')];
+            const milikWarna = item.filter((li) => warna && li.dataset.warna === warna);
+            item.forEach((li) => {
+                li.hidden = milikWarna.length > 0 && li.dataset.warna !== undefined && li.dataset.warna !== warna;
+            });
+            const daftar = galeri.querySelector('.galeri-thumb');
+            if (daftar) daftar.hidden = item.filter((li) => !li.hidden).length <= 1;
+            const pertama = milikWarna[0]?.querySelector('[data-foto]');
+            if (pertama) pertama.click();
+        };
+
+        radios.forEach((r) => r.addEventListener('change', () => {
+            render();
+            if (galeri && kunci(r) === galeri.dataset.opsiWarna) gantiFoto();
+        }));
         render();
+        gantiFoto();
     });
 })();
 

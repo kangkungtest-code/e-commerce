@@ -139,7 +139,7 @@ class Keranjang
                 'variant' => $v,
                 'nama' => $v->product->getTranslation('nama_terjemahan', app()->getLocale()),
                 'opsi' => collect($v->opsi ?? [])->map(fn ($n, $k) => __($k).': '.__($n))->values()->implode(', '),
-                'foto' => $v->product->images->first()?->thumbUrl(),
+                'foto' => $v->product->fotoUntuk($v->opsi[\App\Models\Product::OPSI_WARNA] ?? null)?->thumbUrl(),
                 'url' => route('produk.show', $v->product),
                 'harga_idr' => (float) $v->harga_idr,
                 'total_idr' => (float) $v->harga_idr * $i->qty,

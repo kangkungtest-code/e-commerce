@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Support\ProductImageStorage;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -57,7 +58,7 @@ class ProductForm
                     ]),
 
                 Section::make('Foto')
-                    ->description("Maksimal {$foto['max_per_product']} foto. Otomatis diperkecil & dikonversi ke WebP. Foto pertama jadi foto utama — geser untuk mengubah urutan.")
+                    ->description("Maksimal {$foto['max_per_product']} foto. Otomatis diperkecil & dikonversi ke WebP. Foto pertama jadi foto utama — geser untuk mengubah urutan. Pilih warna supaya foto utama ikut berganti saat pembeli memilih warna itu (pilihan warna muncul setelah varian dibuat).")
                     ->columnSpanFull()
                     ->schema([
                         Repeater::make('images')
@@ -78,6 +79,16 @@ class ProductForm
                                     ->maxSize($foto['max_upload_kb'])
                                     ->required()
                                     ->saveUploadedFileUsing(fn (TemporaryUploadedFile $file): string => app(ProductImageStorage::class)->store($file)),
+                                Select::make('warna')
+                                    ->hiddenLabel()
+                                    ->placeholder('Semua warna')
+                                    ->options(function ($livewire): array {
+                                        $produk = method_exists($livewire, 'getRecord') ? $livewire->getRecord() : null;
+                                        $warna = $produk instanceof Product ? $produk->daftarWarna() : [];
+
+                                        return array_combine($warna, $warna);
+                                    })
+                                    ->native(false),
                             ]),
                     ]),
             ]);

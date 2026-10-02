@@ -625,3 +625,5 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
     .progres-langkah li { font-size: .8125rem; padding: 0 .1rem; }
     .progres-langkah .langkah-waktu { font-size: .75rem; }
 }
+.galeri-thumb li[hidden] { display: none; }
+.galeri-thumb[hidden] { display: none; }

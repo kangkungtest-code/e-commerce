@@ -102,7 +102,7 @@ class TampilanOrder
                 return [
                     'nama' => $i->variant?->product?->getTranslation('nama_terjemahan', $locale) ?? '—',
                     'opsi' => collect($i->variant?->opsi ?? [])->map(fn ($n, $k) => __($k).': '.__($n))->values()->implode(', '),
-                    'foto' => $i->variant?->product?->images->first()?->thumbUrl(),
+                    'foto' => $i->variant?->product?->fotoUntuk($i->variant->opsi[\App\Models\Product::OPSI_WARNA] ?? null)?->thumbUrl(),
                     'qty' => $i->qty,
                     'harga' => self::uang($o, $hargaSatuan),
                     'total' => self::uang($o, $hargaSatuan * $i->qty),
