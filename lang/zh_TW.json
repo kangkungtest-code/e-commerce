@@ -255,5 +255,15 @@
     "Your return was approved. Send the item back to the address below and enter the tracking number. We cover the shipping cost.": "退貨已核准。請將商品寄回下方地址並填寫追蹤號碼，運費由本店負擔。",
     "from :price": "起價 :price",
     "or use your email": "或使用電子郵件",
-    "{0} empty|{1} :count item|[2,*] :count items": "{0} 空的|[1,*] :count 件商品"
+    "{0} empty|{1} :count item|[2,*] :count items": "{0} 空的|[1,*] :count 件商品",
+    "Order progress": "訂單進度",
+    "Payment received": "已收到付款",
+    "Thanks! We'll start packing your order soon. You'll get an email when it ships.": "謝謝！我們很快就會開始包裝您的訂單，出貨時會寄電子郵件通知您。",
+    "We're packing your order": "我們正在包裝您的訂單",
+    "Your items are being prepared. You'll get the tracking number as soon as it ships.": "您的商品正在準備中，出貨後即可在此查看追蹤號碼。",
+    "Your order is on its way": "您的訂單正在配送中",
+    "Use the tracking number below on the courier's website to follow the package.": "請使用下方的追蹤號碼在物流公司網站查詢包裹。",
+    "Order completed": "訂單已完成",
+    "Thanks for shopping with us!": "感謝您的購買！",
+    "Paid :amount via :method on :date": "已於 :date 透過 :method 支付 :amount"
 }

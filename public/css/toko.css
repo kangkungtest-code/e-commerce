@@ -606,3 +606,22 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
 .blok-uji { margin-top: 1rem; padding: 1rem; border: 2px dashed #b8860b; border-radius: 6px; background: #fff8e1; }
 .blok-uji p { margin: 0 0 .5rem; }
 .blok-uji form { margin-bottom: .5rem; }
+
+/* Pelacak progres order (dibayar → dikemas → dikirim → selesai) */
+.progres h2 { margin: 0 0 .35rem; }
+.progres .resi { margin: .75rem 0 .5rem; }
+.progres-langkah { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+.progres-langkah li { position: relative; display: grid; align-content: start; justify-items: center; text-align: center; gap: .15rem; padding: 0 .25rem; font-size: .875rem; color: var(--ink-soft); }
+.progres-langkah li::before { content: ""; position: absolute; top: .5rem; left: -50%; width: 100%; height: 3px; background: var(--line); z-index: 0; }
+.progres-langkah li:first-child::before { display: none; }
+.progres-langkah .titik { position: relative; z-index: 1; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--paper); border: 3px solid var(--line); margin-bottom: .35rem; }
+.progres-langkah .langkah-label { font-weight: 600; line-height: 1.25; }
+.progres-langkah .langkah-waktu { font-size: .8125rem; }
+.progres-langkah .langkah-lewat::before, .progres-langkah .langkah-sekarang::before { background: var(--kangkung); }
+.progres-langkah .langkah-lewat .titik { background: var(--kangkung); border-color: var(--kangkung); }
+.progres-langkah .langkah-sekarang { color: var(--ink); }
+.progres-langkah .langkah-sekarang .titik { border-color: var(--kangkung); box-shadow: 0 0 0 4px rgba(74, 127, 69, .2); }
+@media (max-width: 480px) {
+    .progres-langkah li { font-size: .8125rem; padding: 0 .1rem; }
+    .progres-langkah .langkah-waktu { font-size: .75rem; }
+}

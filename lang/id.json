@@ -255,5 +255,15 @@
     "Your return was approved. Send the item back to the address below and enter the tracking number. We cover the shipping cost.": "Retur disetujui. Kirim barang ke alamat di bawah lalu isi nomor resinya. Ongkir ditanggung toko.",
     "from :price": "mulai :price",
     "or use your email": "atau pakai email",
-    "{0} empty|{1} :count item|[2,*] :count items": "{0} kosong|[1,*] :count barang"
+    "{0} empty|{1} :count item|[2,*] :count items": "{0} kosong|[1,*] :count barang",
+    "Order progress": "Progres pesanan",
+    "Payment received": "Pembayaran diterima",
+    "Thanks! We'll start packing your order soon. You'll get an email when it ships.": "Terima kasih! Pesananmu segera kami kemas. Kamu akan dapat email saat barang dikirim.",
+    "We're packing your order": "Pesananmu sedang dikemas",
+    "Your items are being prepared. You'll get the tracking number as soon as it ships.": "Barangmu sedang disiapkan. Nomor resi akan muncul di sini begitu dikirim.",
+    "Your order is on its way": "Pesananmu sedang dalam perjalanan",
+    "Use the tracking number below on the courier's website to follow the package.": "Lacak paketmu dengan nomor resi di bawah ini di situs kurir.",
+    "Order completed": "Pesanan selesai",
+    "Thanks for shopping with us!": "Terima kasih sudah berbelanja!",
+    "Paid :amount via :method on :date": "Dibayar :amount lewat :method pada :date"
 }

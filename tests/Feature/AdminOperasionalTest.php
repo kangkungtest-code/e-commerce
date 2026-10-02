@@ -93,6 +93,11 @@ class AdminOperasionalTest extends TestCase
         $this->assertSame(3, $this->stokM()->jumlah);
         $this->assertSame(0, $this->stokM()->jumlah_reserved);
 
+        // Pembeli melihat pelacak progres setelah dibayar.
+        $this->actingAs($this->pembeli, 'web')->get(route('akun.pesanan.show', $order))
+            ->assertSee('Payment received')->assertSee('aria-current="step"', false);
+        $this->actingAs($this->admin, 'admin');
+
         $lw->callAction('proses');
         $this->assertSame(Order::STATUS_DIPROSES, $order->fresh()->status);
 
@@ -116,7 +121,7 @@ class AdminOperasionalTest extends TestCase
 
         // Pembeli melihat riwayat & resi.
         $this->actingAs($this->pembeli, 'web')->get(route('akun.pesanan.show', $order))
-            ->assertSee('JNE123456')->assertSee('Completed');
+            ->assertSee('JNE123456')->assertSee('Order completed');
     }
 
     public function test_admin_membatalkan_order_belum_dibayar(): void

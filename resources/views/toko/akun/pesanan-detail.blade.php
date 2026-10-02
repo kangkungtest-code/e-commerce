@@ -15,6 +15,30 @@
                     @include('toko.akun._pembayaran', ['o' => $o, 'b' => $o['pembayaran']])
                 @endif
 
+                @if ($o['progres'])
+                    @php($pg = $o['progres'])
+                    <section class="blok blok-sorot progres" aria-label="{{ __('Order progress') }}">
+                        <ol class="progres-langkah">
+                            @foreach ($pg['langkah'] as $l)
+                                <li class="langkah-{{ $l['keadaan'] }}" @if ($l['keadaan'] === 'sekarang') aria-current="step" @endif>
+                                    <span class="titik" aria-hidden="true"></span>
+                                    <span class="langkah-label">{{ $l['label'] }}</span>
+                                    @if ($l['waktu'])<span class="langkah-waktu">{{ $l['waktu'] }}</span>@endif
+                                </li>
+                            @endforeach
+                        </ol>
+                        <h2>{{ $pg['judul'] }}</h2>
+                        <p>{{ $pg['teks'] }}</p>
+                        @if ($pg['resi'])
+                            <p class="resi">
+                                {{ __('Tracking number') }}: <strong data-salin-isi>{{ $pg['resi'] }}</strong>
+                                <button type="button" class="tautan" data-salin data-t-tersalin="{{ __('Copied') }}">{{ __('Copy') }}</button>
+                            </p>
+                        @endif
+                        @if ($pg['dibayar'])<p class="redup">{{ $pg['dibayar'] }}</p>@endif
+                    </section>
+                @endif
+
                 <section class="blok">
                     <h2>{{ __('Items') }}</h2>
                     <ul class="daftar-barang">
@@ -76,7 +100,6 @@
                         {{ $o['alamat']['detail_alamat'] ?? '' }}<br>
                         {{ $o['alamat']['kota'] ?? '' }} {{ $o['alamat']['kode_pos'] ?? '' }}, {{ $o['nama_negara'] }}
                     </p>
-                    @if ($o['resi'])<p>{{ __('Tracking number') }}: <strong>{{ $o['resi'] }}</strong></p>@endif
                 </section>
             </div>
 
