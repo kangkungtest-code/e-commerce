@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\MasukController;
+use App\Http\Controllers\Auth\VerifikasiController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\SosialController;
 use App\Http\Controllers\Toko\AkunController;
@@ -59,6 +60,11 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/akun', [AkunController::class, 'index'])->name('akun');
     Route::put('/akun/profil', [AkunController::class, 'updateProfil'])->name('akun.profil');
     Route::put('/akun/password', [AkunController::class, 'updatePassword'])->name('akun.password');
+    Route::delete('/akun', [AkunController::class, 'hapus'])->middleware('throttle:5,1')->name('akun.hapus');
+
+    Route::get('/email/verifikasi', [VerifikasiController::class, 'pemberitahuan'])->name('verification.notice');
+    Route::get('/email/verifikasi/{id}/{hash}', [VerifikasiController::class, 'verifikasi'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+    Route::post('/email/verifikasi/kirim-ulang', [VerifikasiController::class, 'kirimUlang'])->middleware('throttle:3,1')->name('verification.send');
 
     Route::get('/akun/alamat/baru', [AlamatController::class, 'create'])->name('akun.alamat.create');
     Route::post('/akun/alamat', [AlamatController::class, 'store'])->name('akun.alamat.store');
@@ -70,15 +76,15 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/akun/pesanan/{order}', [PesananController::class, 'show'])->name('akun.pesanan.show');
     Route::post('/akun/pesanan/{order}/batal', [PesananController::class, 'batal'])->name('akun.pesanan.batal');
     Route::post('/akun/pesanan/{order}/retur', [PesananController::class, 'ajukanRetur'])->middleware('throttle:5,1')->name('akun.pesanan.retur');
-    Route::post('/akun/pesanan/{order}/bayar', [PembayaranController::class, 'bayar'])->middleware('throttle:10,1')->name('akun.pesanan.bayar');
+    Route::post('/akun/pesanan/{order}/bayar', [PembayaranController::class, 'bayar'])->middleware(['terverifikasi', 'throttle:10,1'])->name('akun.pesanan.bayar');
     Route::post('/akun/pesanan/{order}/simulasi', [PembayaranController::class, 'simulasi'])->middleware('throttle:10,1')->name('akun.pesanan.simulasi');
     Route::get('/akun/pesanan/{order}/status', [PembayaranController::class, 'status'])->middleware('throttle:30,1')->name('akun.pesanan.status');
     Route::get('/bayar/paypal/{payment}/kembali', [PembayaranController::class, 'paypalKembali'])->name('bayar.paypal.kembali');
     Route::get('/bayar/paypal/{payment}/batal', [PembayaranController::class, 'paypalBatal'])->name('bayar.paypal.batal');
     Route::put('/akun/retur/{retur}/resi', [PesananController::class, 'resiRetur'])->name('akun.retur.resi');
 
-    Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/checkout', [CheckoutController::class, 'show'])->middleware('terverifikasi')->name('checkout');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->middleware(['terverifikasi', 'throttle:10,1']);
 });
 
 // Webhook payment gateway (tanpa CSRF & sesi; diverifikasi per gateway).

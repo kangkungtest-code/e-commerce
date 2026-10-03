@@ -356,7 +356,8 @@ We use essential cookies to keep you signed in, remember your cart and remember 
 
 ## Your choices
 - You can view and update your details and addresses in **Account**.
-- To ask for a copy of your data or to delete your account, contact us at [ISI: store email].
+- You can delete your account yourself in **Account → Delete account**. Your name, email, password, saved addresses and sign-in links are removed; records of past orders are kept for accounting, without your account details.
+- To ask for a copy of your data, contact us at [ISI: store email].
 
 ## Security
 The site uses HTTPS, and passwords are stored hashed. No system is completely secure, but we work to protect your data.
@@ -401,7 +402,8 @@ Kami memakai cookie yang diperlukan agar kamu tetap masuk, keranjang tersimpan, 
 
 ## Hak kamu
 - Kamu bisa melihat dan mengubah data serta alamatmu di menu **Akun**.
-- Untuk meminta salinan data atau menghapus akun, hubungi kami di [ISI: email toko].
+- Kamu bisa menghapus akun sendiri di **Akun → Hapus akun**. Nama, email, password, alamat tersimpan, dan login Google/LINE dihapus; catatan pesanan lama tetap disimpan untuk pembukuan, tanpa data akunmu.
+- Untuk meminta salinan data, hubungi kami di [ISI: email toko].
 
 ## Keamanan
 Situs ini memakai HTTPS dan password disimpan dalam bentuk hash. Tidak ada sistem yang benar-benar aman, tetapi kami berupaya melindungi datamu.
@@ -446,7 +448,8 @@ MD,
 
 ## 您的權利
 - 您可在「帳戶」中查看及更新個人資料與地址。
-- 如需取得資料副本或刪除帳號，請寄信至 [ISI: 店家電子郵件]。
+- 您可在「帳戶 → 刪除帳戶」自行刪除帳戶。姓名、電子郵件、密碼、已存地址及社群登入連結將被刪除；過去的訂單紀錄因會計需求保留，但不含帳戶資料。
+- 如需取得資料副本，請寄信至 [ISI: 店家電子郵件]。
 
 ## 資料安全
 本網站使用 HTTPS，密碼以雜湊方式儲存。沒有任何系統能保證絕對安全，但我們會盡力保護您的資料。

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
@@ -24,7 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
  */
 #[Fillable(['nama_lengkap', 'email', 'password', 'bahasa_preferensi', 'mata_uang_preferensi'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser, HasLocalePreference, HasName
+class User extends Authenticatable implements FilamentUser, HasLocalePreference, HasName, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable;
@@ -36,8 +37,14 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
     {
         return [
             'email_verified_at' => 'datetime',
+            'dihapus_pada' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\VerifikasiEmail);
     }
 
     /** Email & notifikasi dikirim dalam bahasa pilihan pembeli. */

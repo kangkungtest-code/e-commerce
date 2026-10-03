@@ -52,6 +52,9 @@ return [
         'maks_qty_per_item' => 20,
     ],
 
+    // Wajib verifikasi email sebelum checkout. null = otomatis: wajib hanya kalau SMTP sudah diisi.
+    'wajib_verifikasi_email' => env('TOKO_WAJIB_VERIFIKASI') === null ? null : filter_var(env('TOKO_WAJIB_VERIFIKASI'), FILTER_VALIDATE_BOOLEAN),
+
     'retur' => [
         // Retur hanya untuk barang cacat / salah kirim, diajukan maksimal N hari setelah order selesai.
         'batas_hari' => (int) env('TOKO_BATAS_RETUR_HARI', 7),

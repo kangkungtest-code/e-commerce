@@ -5,6 +5,16 @@
         <h1 class="judul-halaman">{{ __('Hi, :name', ['name' => \Illuminate\Support\Str::before($user->nama_lengkap, ' ')]) }}</h1>
         @include('toko.akun._nav')
 
+        @if ($perluVerifikasi)
+            <section class="blok blok-sorot verifikasi">
+                <p><strong>{{ __('Please verify your email address.') }}</strong> {{ __('We sent a link to :email. You need it before checking out.', ['email' => $user->email]) }}</p>
+                <form method="post" action="{{ route('verification.send') }}">
+                    @csrf
+                    <button type="submit" class="tombol tombol-garis tombol-kecil">{{ __('Resend verification email') }}</button>
+                </form>
+            </section>
+        @endif
+
         <div class="grid-akun">
             <section class="blok">
                 <div class="blok-kepala">
@@ -88,6 +98,23 @@
                     @include('toko.partials.field', ['bag' => 'password', 'nama' => 'password_confirmation', 'label' => __('Repeat password'), 'tipe' => 'password', 'attr' => 'autocomplete="new-password"'])
                     <button type="submit" class="tombol tombol-kecil">{{ __('Change password') }}</button>
                 </form>
+            </section>
+
+            <section class="blok blok-bahaya">
+                <details @if ($errors->hapus->any()) open @endif>
+                    <summary><h2>{{ __('Delete account') }}</h2></summary>
+                    <p>{{ __('Your name, email, password, saved addresses and sign-in links are removed and you are signed out. Records of past orders are kept for accounting, without your account details.') }}</p>
+                    @if ($errors->hapus->has('hapus'))<p class="habis" role="alert">{{ $errors->hapus->first('hapus') }}</p>@endif
+                    <form method="post" action="{{ route('akun.hapus') }}" class="form" novalidate onsubmit="return confirm(@js(__('Delete your account permanently? This cannot be undone.')))">
+                        @csrf @method('delete')
+                        @if ($punyaSosial)
+                            @include('toko.partials.field', ['bag' => 'hapus', 'nama' => 'konfirmasi_email', 'label' => __('Type your email address to confirm'), 'tipe' => 'email', 'attr' => 'autocomplete="off"', 'pakaiOld' => false])
+                        @else
+                            @include('toko.partials.field', ['bag' => 'hapus', 'nama' => 'konfirmasi_password', 'label' => __('Your password'), 'tipe' => 'password', 'attr' => 'autocomplete="current-password"'])
+                        @endif
+                        <button type="submit" class="tombol tombol-bahaya tombol-kecil">{{ __('Delete my account') }}</button>
+                    </form>
+                </details>
             </section>
         </div>
     </div>

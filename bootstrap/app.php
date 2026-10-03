@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.api' => \App\Http\Middleware\AdminApi::class,
             'izin' => \App\Http\Middleware\IzinApi::class,
+            'terverifikasi' => \App\Http\Middleware\EmailTerverifikasi::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
