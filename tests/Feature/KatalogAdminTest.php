@@ -50,9 +50,14 @@ class KatalogAdminTest extends TestCase
     {
         return Product::create([
             'nama_terjemahan' => ['en' => 'Black T-Shirt', 'id' => 'Kaos Hitam'],
-            'kategori' => 'Kaos',
+            'category_id' => $this->kategoriKaos()->id,
             'is_active' => true,
         ]);
+    }
+
+    private function kategoriKaos(): \App\Models\Category
+    {
+        return \App\Models\Category::firstOrCreate(['slug' => 't-shirts'], ['nama_terjemahan' => ['id' => 'Kaos', 'en' => 'T-shirts']]);
     }
 
     public function test_halaman_daftar_produk_bisa_dibuka(): void
@@ -75,13 +80,14 @@ class KatalogAdminTest extends TestCase
             ->fillForm([
                 'nama_terjemahan' => ['en' => 'Black T-Shirt', 'id' => 'Kaos Hitam', 'zh_TW' => '黑色T恤'],
                 'deskripsi_terjemahan' => ['en' => 'Cotton', 'id' => 'Katun', 'zh_TW' => null],
-                'kategori' => 'Kaos',
+                'category_id' => $this->kategoriKaos()->id,
                 'is_active' => true,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $product = Product::firstOrFail();
+        $this->assertSame('t-shirts', $product->category->slug);
         $this->assertSame('Kaos Hitam', $product->getTranslation('nama_terjemahan', 'id'));
         $this->assertSame('黑色T恤', $product->getTranslation('nama_terjemahan', 'zh_TW'));
         // Bahasa kosong jatuh ke English.
@@ -185,5 +191,29 @@ class KatalogAdminTest extends TestCase
         $this->assertSame(0, ProductImage::count());
         Storage::disk('public')->assertMissing([$path, ProductImageStorage::thumbPath($path)]);
         $this->assertNotNull($image);
+    }
+
+    public function test_kelola_kategori_tiga_bahasa(): void
+    {
+        Livewire::test(\App\Filament\Resources\Categories\Pages\ManageCategories::class)
+            ->callAction('create', ['nama_terjemahan' => ['id' => 'Sepatu', 'en' => 'Shoes', 'zh_TW' => '鞋子'], 'slug' => null, 'is_active' => true])
+            ->assertHasNoActionErrors();
+
+        $c = \App\Models\Category::where('slug', 'shoes')->firstOrFail();
+        $this->assertSame('鞋子', $c->nama('zh_TW'));
+
+        // Slug tidak boleh dobel / berformat salah.
+        Livewire::test(\App\Filament\Resources\Categories\Pages\ManageCategories::class)
+            ->callAction('create', ['nama_terjemahan' => ['id' => 'X', 'en' => 'X'], 'slug' => 'shoes'])
+            ->assertHasActionErrors(['slug' => 'unique']);
+        Livewire::test(\App\Filament\Resources\Categories\Pages\ManageCategories::class)
+            ->callAction('create', ['nama_terjemahan' => ['id' => 'X', 'en' => 'X'], 'slug' => 'Bukan Slug'])
+            ->assertHasActionErrors(['slug']);
+
+        // Hapus kategori: produknya tetap ada, tanpa kategori.
+        $p = $this->buatProduk();
+        $p->update(['category_id' => $c->id]);
+        $c->delete();
+        $this->assertNull($p->fresh()->category_id);
     }
 }

@@ -6,7 +6,7 @@
             <a href="{{ route('produk.index') }}">{{ __('Shop') }}</a>
             @if ($p['kategori'])
                 <span aria-hidden="true">/</span>
-                <a href="{{ route('produk.index', ['kategori' => $p['kategori']]) }}">{{ __($p['kategori']) }}</a>
+                <a href="{{ route('produk.index', ['kategori' => $p['kategori']['slug']]) }}">{{ $p['kategori']['nama'] }}</a>
             @endif
         </nav>
 

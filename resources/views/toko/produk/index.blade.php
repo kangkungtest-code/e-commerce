@@ -1,14 +1,14 @@
-@extends('layouts.toko', ['judul' => isset($filter['kategori']) ? __($filter['kategori']) : __('All products')])
+@extends('layouts.toko', ['judul' => $kategori_aktif ?? __('All products')])
 
 @section('isi')
     <div class="wrap halaman">
-        <h1 class="judul-halaman">{{ isset($filter['kategori']) ? __($filter['kategori']) : __('All products') }}</h1>
+        <h1 class="judul-halaman">{{ $kategori_aktif ?? __('All products') }}</h1>
 
         <div class="toolbar">
             <ul class="kategori kategori-rapat" aria-label="{{ __('Categories') }}">
                 <li><a href="{{ route('produk.index', array_filter(['q' => $filter['q'] ?? null, 'urut' => $filter['urut'] !== 'terbaru' ? $filter['urut'] : null])) }}" @if (empty($filter['kategori'])) aria-current="page" @endif>{{ __('All') }}</a></li>
                 @foreach ($kategori as $k)
-                    <li><a href="{{ route('produk.index', array_filter(['kategori' => $k, 'q' => $filter['q'] ?? null, 'urut' => $filter['urut'] !== 'terbaru' ? $filter['urut'] : null])) }}" @if (($filter['kategori'] ?? null) === $k) aria-current="page" @endif>{{ __($k) }}</a></li>
+                    <li><a href="{{ route('produk.index', array_filter(['kategori' => $k['slug'], 'q' => $filter['q'] ?? null, 'urut' => $filter['urut'] !== 'terbaru' ? $filter['urut'] : null])) }}" @if (($filter['kategori'] ?? null) === $k['slug']) aria-current="page" @endif>{{ $k['nama'] }}</a></li>
                 @endforeach
             </ul>
 

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Actions\Katalog\BuatVarianAction;
 use App\Models\ExchangeRate;
 use App\Models\Faq;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShippingZone;
@@ -12,6 +13,7 @@ use App\Support\ProductImageStorage;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Katalog contoh toko baju untuk server dev/demo (data di database/data/katalog-demo.php).
@@ -27,7 +29,7 @@ class DemoCatalogSeeder extends Seeder
 
         $dibuat = 0;
         foreach ($data['produk'] as $p) {
-            $dibuat += $this->produk($p, $data['warna']) ? 1 : 0;
+            $dibuat += $this->produk($p, $data['warna'], $data['kategori']) ? 1 : 0;
         }
 
         foreach ($data['kurs'] as [$asal, $tujuan, $rate, $margin]) {
@@ -73,7 +75,15 @@ class DemoCatalogSeeder extends Seeder
         }
     }
 
-    private function produk(array $p, array $palet): bool
+    private function kategori(string $nama, array $daftar): ?Category
+    {
+        $t = $daftar[$nama] ?? ['id' => $nama, 'en' => $nama];
+
+        return Category::query()->where('slug', Str::slug($t['en']))->first()
+            ?? Category::create(['nama_terjemahan' => $t, 'urutan' => (int) Category::max('urutan') + 1, 'is_active' => true]);
+    }
+
+    private function produk(array $p, array $palet, array $daftarKategori): bool
     {
         $skuPertama = $this->sku($p['kode'], $p['warna'][0], $p['ukuran'][0]);
         if ($ada = ProductVariant::query()->where('sku', $skuPertama)->first()) {
@@ -82,11 +92,11 @@ class DemoCatalogSeeder extends Seeder
             return false;
         }
 
-        DB::transaction(function () use ($p, $palet) {
+        DB::transaction(function () use ($p, $palet, $daftarKategori) {
             $product = Product::create([
                 'nama_terjemahan' => $p['nama'],
                 'deskripsi_terjemahan' => $p['deskripsi'],
-                'kategori' => $p['kategori'],
+                'category_id' => $this->kategori($p['kategori'], $daftarKategori)?->id,
                 'is_active' => true,
             ]);
 

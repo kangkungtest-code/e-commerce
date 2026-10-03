@@ -25,7 +25,7 @@ trait TokoFixture
 
         $this->kaos = Product::create([
             'nama_terjemahan' => ['en' => 'Black T-Shirt', 'id' => 'Kaos Hitam'],
-            'kategori' => 'Kaos',
+            'category_id' => \App\Models\Category::firstOrCreate(['slug' => 't-shirts'], ['nama_terjemahan' => ['id' => 'Kaos', 'en' => 'T-shirts', 'zh_TW' => 'T恤']])->id,
             'is_active' => true,
         ]);
         $buat = app(BuatVarianAction::class);

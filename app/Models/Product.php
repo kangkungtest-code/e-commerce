@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['slug', 'nama_terjemahan', 'deskripsi_terjemahan', 'kategori', 'is_active'])]
+#[Fillable(['slug', 'category_id', 'nama_terjemahan', 'deskripsi_terjemahan', 'is_active'])]
 class Product extends Model
 {
     use HasTranslations, HasUuids;
@@ -73,6 +73,11 @@ class Product extends Model
         $kata = '%'.addcslashes(mb_strtolower($kata), '%_\\').'%';
 
         return $query->whereRaw('LOWER(CAST(nama_terjemahan AS CHAR)) LIKE ?', [$kata]);
+    }
+
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function images(): HasMany

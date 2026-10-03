@@ -29,7 +29,7 @@ class SeoTest extends TestCase
         $this->kaos = Product::create([
             'nama_terjemahan' => ['en' => 'Black T-Shirt </script>', 'id' => 'Kaos Hitam'],
             'deskripsi_terjemahan' => ['en' => 'Soft cotton tee.'],
-            'kategori' => 'Kaos',
+            'category_id' => \App\Models\Category::firstOrCreate(['slug' => 't-shirts'], ['nama_terjemahan' => ['id' => 'Kaos', 'en' => 'T-shirts', 'zh_TW' => 'T恤']])->id,
             'is_active' => true,
         ]);
         app(BuatVarianAction::class)->execute($this->kaos, ['sku' => 'K-M', 'opsi' => ['Ukuran' => 'M'], 'harga_idr' => 100000, 'berat_gram' => 200, 'stok_awal' => 3]);
@@ -108,8 +108,8 @@ class SeoTest extends TestCase
             ->assertSee('<link rel="canonical" href="'.route('produk.show', $this->kaos).'">', false);
 
         // Urutan tidak membuat URL kanonik baru; kategori iya; hasil pencarian tidak diindeks.
-        $this->get(route('produk.index', ['kategori' => 'Kaos', 'urut' => 'termurah']))
-            ->assertSee('<link rel="canonical" href="'.route('produk.index', ['kategori' => 'Kaos']).'">', false);
+        $this->get(route('produk.index', ['kategori' => 't-shirts', 'urut' => 'termurah']))
+            ->assertSee('<link rel="canonical" href="'.route('produk.index', ['kategori' => 't-shirts']).'">', false);
         $this->get(route('produk.index', ['q' => 'kaos']))->assertSee('content="noindex, nofollow"', false);
 
         $this->get(route('keranjang'))->assertSee('content="noindex, nofollow"', false);
@@ -132,7 +132,7 @@ class SeoTest extends TestCase
         }
 
         $this->assertContains(route('produk.show', $this->kaos), $loc->all());
-        $this->assertContains(route('produk.index', ['kategori' => 'Kaos']), $loc->all());
+        $this->assertContains(route('produk.index', ['kategori' => 't-shirts']), $loc->all());
         $this->assertContains(route('faq'), $loc->all());
         $this->assertFalse($loc->contains(fn ($l) => str_contains($l, 'hidden')));
         $this->assertStringContainsString('<image:loc>', $res->getContent());

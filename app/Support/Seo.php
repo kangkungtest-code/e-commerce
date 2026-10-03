@@ -68,7 +68,7 @@ class Seo
             'name' => $detail['nama'],
             'description' => $detail['deskripsi'] ? \Illuminate\Support\Str::limit(strip_tags($detail['deskripsi']), 500) : null,
             'image' => $gambar ?: null,
-            'category' => $p->kategori,
+            'category' => $p->category?->nama('en'),
             'brand' => ['@type' => 'Brand', 'name' => config('toko.nama')],
             'offers' => [
                 '@type' => 'AggregateOffer',

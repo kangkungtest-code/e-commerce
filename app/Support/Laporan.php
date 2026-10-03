@@ -71,7 +71,7 @@ class Laporan
     {
         return OrderItem::query()
             ->whereIn('order_id', $this->orderTerbayar()->select('id'))
-            ->with('variant.product')
+            ->with('variant.product.category')
             ->get();
     }
 
@@ -89,7 +89,7 @@ class Laporan
     public function penjualanPerKategori(): Collection
     {
         return $this->itemTerbayar()
-            ->groupBy(fn (OrderItem $i) => $i->variant?->product?->kategori ?: 'Tanpa kategori')
+            ->groupBy(fn (OrderItem $i) => $i->variant?->product?->category?->nama('id') ?: 'Tanpa kategori')
             ->map(fn ($g) => (float) $g->sum(fn (OrderItem $i) => $i->qty * (float) $i->harga_saat_itu))
             ->sortDesc();
     }

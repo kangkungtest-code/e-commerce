@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Toko;
 use App\Support\GambarOg;
 use App\Support\Seo;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Faq;
 use App\Models\Product;
 use App\Support\TampilanProduk;
@@ -19,14 +20,16 @@ class KatalogController extends Controller
         return Product::query()
             ->where('is_active', true)
             ->whereHas('variants')
-            ->with(['images', 'variants.stocks'])
+            ->with(['images', 'variants.stocks', 'category'])
             ->withMin('variants', 'harga_idr');
     }
 
+    /** @return array<int, array{slug: string, nama: string}> */
     private function kategori(): array
     {
-        return Product::query()->where('is_active', true)->whereNotNull('kategori')
-            ->distinct()->orderBy('kategori')->pluck('kategori')->all();
+        return Category::query()->tampil()->get()
+            ->map(fn (Category $c) => ['slug' => $c->slug, 'nama' => $c->nama()])
+            ->all();
     }
 
     public function home(): View
@@ -52,8 +55,14 @@ class KatalogController extends Controller
             'urut' => ['nullable', 'in:terbaru,termurah,termahal'],
         ]);
 
+        // Slug kategori yang tidak dikenal / nonaktif diabaikan (tautan lama tetap membuka katalog).
+        $kategoriAktif = filled($filter['kategori'] ?? null)
+            ? Category::query()->where('is_active', true)->where('slug', $filter['kategori'])->first()
+            : null;
+        $filter['kategori'] = $kategoriAktif?->slug;
+
         $query = $this->query()
-            ->when($filter['kategori'] ?? null, fn (Builder $q, string $k) => $q->where('kategori', $k))
+            ->when($kategoriAktif, fn (Builder $q, Category $k) => $q->where('category_id', $k->id))
             ->when($filter['q'] ?? null, fn (Builder $q, string $s) => Product::cariNama($q, $s));
 
         match ($filter['urut'] ?? 'terbaru') {
@@ -68,7 +77,8 @@ class KatalogController extends Controller
             'produk' => $produk,
             'kartu' => $produk->getCollection()->map(fn (Product $p) => TampilanProduk::kartu($p)),
             'kategori' => $this->kategori(),
-            'filter' => $filter + ['urut' => 'terbaru'],
+            'filter' => array_filter($filter) + ['urut' => 'terbaru'],
+            'kategori_aktif' => $kategoriAktif?->nama(),
             'seo' => [
                 // Urutan & halaman tidak membuat halaman baru di mata Google; kategori iya.
                 'kanonik' => route('produk.index', array_filter([
@@ -77,8 +87,8 @@ class KatalogController extends Controller
                 ])),
                 'noindex' => filled($filter['q'] ?? null) || $produk->isEmpty(),
                 'gambar' => GambarOg::toko($produk->getCollection()),
-                'deskripsi' => isset($filter['kategori'])
-                    ? __(':category from :store. Prices in rupiah, US dollars or Taiwan dollars.', ['category' => __($filter['kategori']), 'store' => config('toko.nama')])
+                'deskripsi' => $kategoriAktif
+                    ? __(':category from :store. Prices in rupiah, US dollars or Taiwan dollars.', ['category' => $kategoriAktif->nama(), 'store' => config('toko.nama')])
                     : null,
             ],
         ]);
@@ -92,7 +102,7 @@ class KatalogController extends Controller
         if ($request->route()->originalParameter('product') !== $product->slug) {
             return redirect()->route('produk.show', $product, 301);
         }
-        $product->load(['images', 'variants.stocks']);
+        $product->load(['images', 'variants.stocks', 'category']);
 
         $detail = TampilanProduk::detail($product);
 
@@ -105,7 +115,7 @@ class KatalogController extends Controller
             ],
             'terkait' => $this->query()
                 ->where('id', '!=', $product->id)
-                ->when($product->kategori, fn (Builder $q, string $k) => $q->where('kategori', $k))
+                ->when($product->category_id, fn (Builder $q, string $k) => $q->where('category_id', $k))
                 ->take(4)->get()
                 ->map(fn (Product $x) => TampilanProduk::kartu($x)),
         ]);

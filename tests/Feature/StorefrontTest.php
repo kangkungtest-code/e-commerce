@@ -29,7 +29,7 @@ class StorefrontTest extends TestCase
         $this->kaos = Product::create([
             'nama_terjemahan' => ['en' => 'Black T-Shirt', 'id' => 'Kaos Hitam', 'zh_TW' => '黑色T恤'],
             'deskripsi_terjemahan' => ['en' => 'Soft cotton', 'id' => 'Katun lembut'],
-            'kategori' => 'Kaos',
+            'category_id' => \App\Models\Category::firstOrCreate(['slug' => 't-shirts'], ['nama_terjemahan' => ['id' => 'Kaos', 'en' => 'T-shirts', 'zh_TW' => 'T恤']])->id,
             'is_active' => true,
         ]);
         $buat = app(BuatVarianAction::class);
@@ -127,10 +127,13 @@ class StorefrontTest extends TestCase
 
     public function test_filter_kategori_cari_dan_urut(): void
     {
-        $celana = Product::create(['nama_terjemahan' => ['en' => 'Chino Pants', 'id' => 'Celana Chino'], 'kategori' => 'Celana', 'is_active' => true]);
+        $celana = Product::create(['nama_terjemahan' => ['en' => 'Chino Pants', 'id' => 'Celana Chino'], 'category_id' => \App\Models\Category::create(['nama_terjemahan' => ['id' => 'Celana', 'en' => 'Pants']])->id, 'is_active' => true]);
         app(BuatVarianAction::class)->execute($celana, ['sku' => 'C-30', 'opsi' => ['Ukuran' => '30'], 'harga_idr' => 300000, 'berat_gram' => 400, 'stok_awal' => 5]);
 
-        $this->get('/produk?kategori=Celana')->assertSee('Chino Pants')->assertDontSee('Black T-Shirt');
+        // Nama kategori tampil sesuai bahasa; slug tak dikenal diabaikan.
+        $this->get('/produk?kategori=tidak-ada')->assertOk()->assertSee('Chino Pants')->assertSee('Black T-Shirt');
+        $this->get('/produk?kategori=pants')->assertSee('<h1 class="judul-halaman">Pants</h1>', false);
+        $this->get('/produk?kategori=pants')->assertSee('Chino Pants')->assertDontSee('Black T-Shirt');
         $this->get('/produk?q=chino')->assertSee('Chino Pants')->assertDontSee('Black T-Shirt');
         $this->get('/produk?urut=termahal')->assertSeeInOrder(['Chino Pants', 'Black T-Shirt']);
         $this->get('/produk?urut=termurah')->assertSeeInOrder(['Black T-Shirt', 'Chino Pants']);

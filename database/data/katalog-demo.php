@@ -21,6 +21,15 @@ $warna = [
 
 return [
     'warna' => $warna,
+    // Kategori contoh: nama Indonesia (dipakai di daftar produk di bawah) => terjemahan.
+    'kategori' => [
+        'Kaos' => ['id' => 'Kaos', 'en' => 'T-shirts', 'zh_TW' => 'T恤'],
+        'Kemeja' => ['id' => 'Kemeja', 'en' => 'Shirts', 'zh_TW' => '襯衫'],
+        'Celana' => ['id' => 'Celana', 'en' => 'Pants', 'zh_TW' => '褲子'],
+        'Jaket' => ['id' => 'Jaket', 'en' => 'Jackets', 'zh_TW' => '外套'],
+        'Dress' => ['id' => 'Dress', 'en' => 'Dresses', 'zh_TW' => '洋裝與裙子'],
+        'Aksesoris' => ['id' => 'Aksesoris', 'en' => 'Accessories', 'zh_TW' => '配件'],
+    ],
     'produk' => [
         [
             'kode' => 'KAOS-BASIC',

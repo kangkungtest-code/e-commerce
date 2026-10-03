@@ -19,7 +19,7 @@ class ProductsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['images', 'variants.stocks']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['images', 'variants.stocks', 'category']))
             ->defaultSort('updated_at', 'desc')
             ->columns([
                 ImageColumn::make('foto')
@@ -32,9 +32,10 @@ class ProductsTable
                     ->description(fn (Product $record): string => $record->getTranslation('nama_terjemahan', 'en'))
                     ->searchable(query: fn (Builder $query, string $search) => Product::cariNama($query, $search)),
                 TextColumn::make('kategori')
+                    ->label('Kategori')
+                    ->state(fn (Product $record): ?string => $record->category?->nama('id'))
                     ->badge()
-                    ->placeholder('—')
-                    ->sortable(),
+                    ->placeholder('—'),
                 TextColumn::make('variants_count')
                     ->label('Varian')
                     ->counts('variants')
@@ -51,8 +52,9 @@ class ProductsTable
                     ->sortable(),
             ])
             ->filters([
-                SelectFilter::make('kategori')
-                    ->options(fn () => Product::query()->whereNotNull('kategori')->distinct()->orderBy('kategori')->pluck('kategori', 'kategori')->all()),
+                SelectFilter::make('category_id')
+                    ->label('Kategori')
+                    ->options(fn () => \App\Models\Category::query()->orderBy('urutan')->get()->mapWithKeys(fn ($c) => [$c->id => $c->nama('id')])->all()),
                 TernaryFilter::make('is_active')->label('Tampil di toko'),
             ])
             ->recordActions([

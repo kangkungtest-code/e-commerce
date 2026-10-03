@@ -24,7 +24,7 @@
             <h2 class="sr-only">{{ __('Categories') }}</h2>
             <ul>
                 @foreach ($kategori as $k)
-                    <li><a href="{{ route('produk.index', ['kategori' => $k]) }}">{{ __($k) }}</a></li>
+                    <li><a href="{{ route('produk.index', ['kategori' => $k['slug']]) }}">{{ $k['nama'] }}</a></li>
                 @endforeach
             </ul>
         </nav>

@@ -18,7 +18,7 @@ class SitemapController extends Controller
             ->orderByDesc('updated_at')
             ->get();
 
-        $kategori = $produk->pluck('kategori')->filter()->unique()->values();
+        $kategori = \App\Models\Category::query()->tampil()->pluck('slug');
 
         $halaman = collect([
             ['loc' => route('home'), 'lastmod' => $produk->max('updated_at')],

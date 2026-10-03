@@ -49,9 +49,15 @@ class ProductForm
                 Section::make('Pengaturan')
                     ->columnSpan(1)
                     ->schema([
-                        TextInput::make('kategori')
-                            ->maxLength(100)
-                            ->datalist(fn () => Product::query()->whereNotNull('kategori')->distinct()->orderBy('kategori')->pluck('kategori')->all()),
+                        Select::make('category_id')
+                            ->label('Kategori')
+                            ->relationship('category', 'slug', fn ($query) => $query->orderBy('urutan'))
+                            ->getOptionLabelFromRecordUsing(fn (\App\Models\Category $c) => $c->nama('id'))
+                            ->searchable(['slug', 'nama_terjemahan'])
+                            ->preload()
+                            ->createOptionForm(\App\Filament\Resources\Categories\CategoryResource::isian())
+                            ->createOptionModalHeading('Kategori baru')
+                            ->helperText('Kelola daftar kategori di menu Katalog → Kategori.'),
                         Toggle::make('is_active')
                             ->label('Tampil di toko')
                             ->default(true),

@@ -42,7 +42,7 @@ class TampilanProduk
         return [
             'url' => route('produk.show', $p),
             'nama' => $p->getTranslation('nama_terjemahan', app()->getLocale()),
-            'kategori' => $p->kategori,
+            'kategori' => $p->category?->nama(),
             'foto' => $p->images->first()?->thumbUrl(),
             'harga' => self::harga($harga->min() ?? 0),
             'mulai_dari' => $harga->unique()->count() > 1,
@@ -79,7 +79,7 @@ class TampilanProduk
             'id' => $p->id,
             'nama' => $p->getTranslation('nama_terjemahan', $locale),
             'deskripsi' => $p->getTranslation('deskripsi_terjemahan', $locale),
-            'kategori' => $p->kategori,
+            'kategori' => $p->category ? ['slug' => $p->category->slug, 'nama' => $p->category->nama()] : null,
             'foto' => $foto->all(),
             'opsi_warna' => Product::OPSI_WARNA,
             'opsi' => self::opsi($p->variants)->values()->all(),

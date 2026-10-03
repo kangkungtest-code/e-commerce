@@ -62,8 +62,9 @@ class StockResource extends Resource
                 Filter::make('menipis')->label('Menipis (≤ '.self::BATAS_MENIPIS.')')
                     ->query(fn (Builder $query) => $query->whereRaw('(jumlah - jumlah_reserved) <= ?', [self::BATAS_MENIPIS])),
                 SelectFilter::make('kategori')
-                    ->options(fn () => \App\Models\Product::query()->whereNotNull('kategori')->distinct()->pluck('kategori', 'kategori')->all())
-                    ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn ($q, $k) => $q->whereHas('variant.product', fn ($p) => $p->where('kategori', $k)))),
+                    ->label('Kategori')
+                    ->options(fn () => \App\Models\Category::query()->orderBy('urutan')->get()->mapWithKeys(fn ($c) => [$c->id => $c->nama('id')])->all())
+                    ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn ($q, $k) => $q->whereHas('variant.product', fn ($p) => $p->where('category_id', $k)))),
             ])
             ->recordActions([
                 Action::make('ubahStok')
