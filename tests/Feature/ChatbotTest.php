@@ -107,7 +107,7 @@ class ChatbotTest extends TestCase
         $this->assertSame('https://line.me/R/ti/p/~frendi.toko', KontakAdmin::urlLine());
     }
 
-    public function test_admin_mengedit_file_dan_kontak(): void
+    public function test_admin_mengedit_file_chatbot(): void
     {
         $this->seed(RoleAndPermissionSeeder::class);
         $admin = User::factory()->create();
@@ -120,13 +120,10 @@ class ChatbotTest extends TestCase
         $baru = Chatbot::isiFile()."\n== promo\nkata: promo, diskon, sale\njawab.id: Promo akhir bulan diskon 10%.\njawab.en: 10% off at the end of the month.\n";
 
         Livewire::test(ChatbotKontak::class)
-            ->set('data.wa', '0812 1111 2222')
-            ->set('data.line', '@tokokami')
             ->set('data.balasan', $baru)
             ->call('simpan')
             ->assertNotified('Tersimpan');
 
-        $this->assertSame('6281211112222', Pengaturan::ambil('kontak.wa'));
         $this->assertSame('promo', (new Chatbot)->jawab('ada diskon?', 'id')['topik']);
 
         // Format salah tidak tersimpan.

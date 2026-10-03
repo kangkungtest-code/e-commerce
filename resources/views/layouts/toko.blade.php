@@ -112,10 +112,33 @@
                 @foreach (\App\Models\HalamanKebijakan::tautan() as $kb)
                     <a href="{{ $kb['url'] }}">{{ $kb['judul'] }}</a>
                 @endforeach
-                @foreach (\App\Support\KontakAdmin::tautan() as $k)
-                    <a href="{{ $k['url'] }}" target="_blank" rel="noopener">{{ $k['jenis'] === 'wa' ? 'WhatsApp' : 'LINE' }}</a>
-                @endforeach
             </p>
+            @php($kontak = \App\Support\KontakAdmin::tautan())
+            @php($medsos = \App\Support\KontakAdmin::medsos())
+            @if ($kontak || $medsos)
+                <div class="footer-kontak">
+                    @if ($kontak)
+                        <p class="footer-tautan" aria-label="{{ __('Contact us') }}">
+                            @foreach ($kontak as $k)
+                                <a href="{{ $k['url'] }}" @if (in_array($k['jenis'], ['wa', 'line'], true)) target="_blank" rel="noopener" @endif>{{ match ($k['jenis']) {
+                                    'wa' => 'WhatsApp',
+                                    'line' => 'LINE',
+                                    'email' => \App\Models\Pengaturan::ambil('kontak.email'),
+                                    default => \App\Support\KontakAdmin::teksTelepon(),
+                                } }}</a>
+                            @endforeach
+                        </p>
+                    @endif
+                    @if ($medsos)
+                        <p class="footer-tautan footer-medsos" aria-label="{{ __('Follow us') }}">
+                            <span>{{ __('Follow us') }}:</span>
+                            @foreach ($medsos as $m)
+                                <a href="{{ $m['url'] }}" target="_blank" rel="noopener me">{{ $m['label'] }}</a>
+                            @endforeach
+                        </p>
+                    @endif
+                </div>
+            @endif
         </div>
     </footer>
 </body>

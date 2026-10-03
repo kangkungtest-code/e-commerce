@@ -32,9 +32,11 @@ class ChatbotKontak extends Page
 
     protected static string | UnitEnum | null $navigationGroup = 'Pengaturan';
 
-    protected static ?string $navigationLabel = 'Chatbot & kontak';
+    protected static ?string $navigationLabel = 'Chatbot';
 
-    protected static ?string $title = 'Chatbot & kontak admin';
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $title = 'Balasan chatbot';
 
     protected static ?string $slug = 'chatbot';
 
@@ -48,11 +50,7 @@ class ChatbotKontak extends Page
 
     public function mount(): void
     {
-        $this->form->fill([
-            'wa' => Pengaturan::ambil('kontak.wa'),
-            'line' => Pengaturan::ambil('kontak.line'),
-            'balasan' => Chatbot::isiFile(),
-        ]);
+        $this->form->fill(['balasan' => Chatbot::isiFile()]);
     }
 
     public function form(Schema $schema): Schema
@@ -60,17 +58,8 @@ class ChatbotKontak extends Page
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('Kontak admin')
-                    ->description('Muncul sebagai tombol di chatbot kalau pembeli butuh bantuan langsung. Kosongkan yang tidak dipakai.')
-                    ->columns(2)
-                    ->schema([
-                        TextInput::make('wa')->label('Nomor WhatsApp')->tel()->placeholder('0812 3456 7890 atau +886 912 345 678')
-                            ->helperText('Nomor yang diawali 0 dianggap nomor Indonesia (+62).'),
-                        TextInput::make('line')->label('ID LINE')->placeholder('@kangkung atau idpribadi')
-                            ->helperText('Akun resmi LINE diawali @.'),
-                    ]),
                 Section::make('File balasan chatbot')
-                    ->description('Chatbot mencocokkan kata kunci di pertanyaan pembeli dengan topik di bawah. Petunjuk format ada di bagian atas file (baris yang diawali #).')
+                    ->description('Chatbot mencocokkan kata kunci di pertanyaan pembeli dengan topik di bawah. Petunjuk format ada di bagian atas file (baris yang diawali #). Tombol WhatsApp/LINE/email/telepon diambil dari Pengaturan → Kontak & notifikasi.')
                     ->schema([
                         Textarea::make('balasan')->hiddenLabel()->rows(28)->required()
                             ->extraInputAttributes(['style' => 'font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.5;', 'spellcheck' => 'false']),
@@ -104,9 +93,7 @@ class ChatbotKontak extends Page
             return;
         }
 
-        Pengaturan::simpan('kontak.wa', KontakAdmin::normalisasiWa($data['wa'] ?? null));
-        Pengaturan::simpan('kontak.line', trim((string) ($data['line'] ?? '')) ?: null);
-        $this->form->fill(['wa' => Pengaturan::ambil('kontak.wa'), 'line' => Pengaturan::ambil('kontak.line'), 'balasan' => Chatbot::isiFile()]);
+        $this->form->fill(['balasan' => Chatbot::isiFile()]);
 
         Notification::make()->success()->title('Tersimpan')->send();
     }
@@ -126,7 +113,7 @@ class ChatbotKontak extends Page
                 ->action(function (array $data) {
                     $j = (new Chatbot)->jawab($data['pesan'], $data['bahasa']);
                     Notification::make()
-                        ->title('Topik: '.$j['topik'].($j['admin'] ? ' (+ tombol WA/LINE)' : ''))
+                        ->title('Topik: '.$j['topik'].($j['admin'] ? ' (+ tombol kontak admin)' : ''))
                         ->body($j['teks'])
                         ->persistent()
                         ->send();

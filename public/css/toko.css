@@ -640,3 +640,9 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
 .kebijakan-lain { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-top: 2.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .kebijakan-lain a[aria-current] { font-weight: 600; text-decoration: none; color: var(--ink); }
 .catatan-setuju { font-size: .875rem; color: var(--ink-soft); margin-top: .75rem; }
+
+/* Footer: kontak & media sosial */
+.footer-kontak { flex-basis: 100%; display: grid; gap: .5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.footer-medsos span { color: var(--ink-soft); }
+.chat-email, .chat-telepon { background: var(--ink); }
+.chat-email:hover, .chat-telepon:hover { background: #000; }

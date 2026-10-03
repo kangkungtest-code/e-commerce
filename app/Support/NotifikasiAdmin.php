@@ -33,6 +33,7 @@ class NotifikasiAdmin
             self::rupiah($o).' · menunggu pembayaran',
             ['jenis' => 'pesanan', 'id' => $o->nomor],
         ));
+        EmailPemilik::kirim(self::PESANAN_BARU, "Pesanan baru {$o->nomor}", 'Pesanan dibuat dan menunggu pembayaran ('.self::rupiah($o).').', $o);
     }
 
     public static function pesananDibayar(Order $o, ?User $oleh = null): void
@@ -42,6 +43,7 @@ class NotifikasiAdmin
             self::rupiah($o).' · siap dikemas',
             ['jenis' => 'pesanan', 'id' => $o->nomor],
         ), $oleh);
+        EmailPemilik::kirim(self::PESANAN_DIBAYAR, "Pesanan {$o->nomor} dibayar", 'Pembayaran sudah masuk. Pesanan siap dikemas.', $o);
     }
 
     public static function pembayaranPerluDicek(Order $o, string $alasan): void
@@ -51,6 +53,7 @@ class NotifikasiAdmin
             $alasan,
             ['jenis' => 'pesanan', 'id' => $o->nomor],
         ));
+        EmailPemilik::kirim(self::PEMBAYARAN_DICEK, "Pembayaran {$o->nomor} perlu dicek", $alasan.'. Cek riwayat pesanan di panel admin.', $o);
     }
 
     public static function returDiajukan(ReturnRequest $r): void
@@ -60,6 +63,7 @@ class NotifikasiAdmin
             \Illuminate\Support\Str::limit($r->alasan, 120),
             ['jenis' => 'retur', 'id' => $r->id],
         ));
+        EmailPemilik::kirim(self::RETUR_DIAJUKAN, "Retur baru untuk {$r->order->nomor}", 'Alasan pembeli: '.$r->alasan, null, $r);
     }
 
     public static function resiReturDiisi(ReturnRequest $r): void
