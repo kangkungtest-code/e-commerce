@@ -295,3 +295,40 @@
     };
     setTimeout(cek, 5000);
 })();
+
+// Pop-up masuk/daftar: tautan [data-masuk] membuka dialog; tanpa JS tetap ke /masuk.
+(() => {
+    const dialog = document.querySelector('[data-dialog-masuk]');
+    if (!dialog || typeof dialog.showModal !== 'function') return;
+
+    const pilihTab = (tab) => {
+        dialog.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+        dialog.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== tab; });
+        const pertama = dialog.querySelector(`[data-panel="${tab}"] input:not([type=hidden])`);
+        if (pertama) setTimeout(() => pertama.focus(), 30);
+    };
+    const buka = (tab, kembali) => {
+        const tujuan = kembali || location.pathname + location.search;
+        dialog.querySelectorAll('[data-kembali]').forEach((i) => { i.value = tujuan; });
+        dialog.querySelectorAll('[data-sosial]').forEach((a) => {
+            const u = new URL(a.href, location.origin);
+            u.searchParams.set('kembali', tujuan);
+            a.href = u.toString();
+        });
+        if (!dialog.open) dialog.showModal();
+        pilihTab(tab);
+    };
+
+    document.addEventListener('click', (e) => {
+        const a = e.target.closest('[data-masuk]');
+        if (!a) return;
+        e.preventDefault();
+        buka(a.dataset.tab || 'masuk', a.dataset.kembali);
+    });
+    dialog.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => pilihTab(b.dataset.tab)));
+    dialog.querySelector('[data-tutup]').addEventListener('click', () => dialog.close());
+    // Klik di luar kotak menutup pop-up.
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+
+    if (dialog.dataset.bukaAwal) buka(dialog.dataset.bukaAwal);
+})();

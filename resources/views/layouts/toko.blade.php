@@ -50,7 +50,7 @@
                 @if ($pembeli)
                     <a href="{{ route('akun') }}" @class(['aktif' => request()->routeIs('akun*')])>{{ __('Account') }}</a>
                 @else
-                    <a href="{{ route('login') }}" @class(['aktif' => request()->routeIs('login', 'daftar')])>{{ __('Sign in') }}</a>
+                    <a href="{{ route('login') }}" data-masuk @class(['aktif' => request()->routeIs('login', 'daftar')])>{{ __('Sign in') }}</a>
                 @endif
                 <a href="{{ route('keranjang') }}" class="keranjang-link" @if (request()->routeIs('keranjang')) aria-current="page" @endif>
                     {{ __('Cart') }}<span class="jumlah" aria-label="{{ trans_choice('{0} empty|{1} :count item|[2,*] :count items', $jumlahKeranjang) }}">{{ $jumlahKeranjang }}</span>
@@ -102,6 +102,10 @@
             <p class="chat-catatan">{{ __('Automated answers. For anything else, chat with our team.') }}</p>
         </section>
     </div>
+
+    @if (! $pembeli && ! request()->routeIs('login', 'daftar', 'password.*'))
+        @include('toko.partials.dialog-masuk')
+    @endif
 
     <footer class="footer">
         <div class="wrap footer-inner">

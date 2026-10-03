@@ -26,7 +26,7 @@
                         <p class="habis">{{ __('Some items need your attention before checkout.') }}</p>
                         <button type="button" class="tombol tombol-lebar" disabled>{{ __('Checkout') }}</button>
                     @else
-                        <a class="tombol tombol-lebar" href="{{ route('checkout') }}">{{ __('Checkout') }}</a>
+                        <a class="tombol tombol-lebar" href="{{ route('checkout') }}" @guest('web') data-masuk data-kembali="{{ route('checkout', absolute: false) }}" @endguest>{{ __('Checkout') }}</a>
                     @endif
                     @guest('web')
                         <p class="catatan">{{ __('You will be asked to sign in or create an account first.') }}</p>

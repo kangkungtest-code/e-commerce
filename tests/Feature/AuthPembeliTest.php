@@ -127,4 +127,34 @@ class AuthPembeliTest extends TestCase
         config(['services.google.client_id' => 'id', 'services.google.client_secret' => 'rahasia']);
         $this->get('/masuk')->assertSee('Continue with Google')->assertDontSee('Continue with LINE');
     }
+
+    public function test_popup_masuk_kembali_ke_halaman_asal(): void
+    {
+        $user = User::factory()->create(['email' => 'pop@contoh.test', 'password' => 'rahasia-123']);
+
+        // Halaman toko untuk tamu memuat pop-up; tombol header membukanya.
+        $this->get(route('faq'))->assertSee('data-dialog-masuk', false)->assertSee('data-masuk', false);
+
+        // Salah password: kembali ke halaman asal, error di bag "dialog" -> pop-up terbuka lagi.
+        // (Cek lewat halaman: assertSessionHasErrors menghapus error dari session JSON.)
+        $this->from(route('faq'))->post(route('login'), ['_dialog' => 'masuk', 'kembali' => '/faq', 'email' => 'pop@contoh.test', 'password' => 'salah'])
+            ->assertRedirect(route('faq'));
+        $this->get(route('faq'))->assertSee('data-buka-awal="masuk"', false)->assertSee('Email or password is incorrect.');
+
+        $this->post(route('login'), ['_dialog' => 'masuk', 'kembali' => '/faq?x=1', 'email' => 'pop@contoh.test', 'password' => 'rahasia-123'])
+            ->assertRedirect(url('/faq?x=1'));
+        $this->assertAuthenticatedAs($user, 'web');
+    }
+
+    public function test_popup_daftar_dan_tujuan_luar_ditolak(): void
+    {
+        $this->post(route('daftar'), [
+            '_dialog' => 'daftar', 'kembali' => '//jahat.example/phish',
+            'nama_lengkap' => 'Popi', 'email' => 'popi@contoh.test', 'password' => 'rahasia-123', 'password_confirmation' => 'rahasia-123',
+        ])->assertRedirect(route('akun'));
+
+        auth('web')->logout();
+        $this->from('/produk')->post(route('daftar'), ['_dialog' => 'daftar', 'nama_lengkap' => '', 'email' => 'x'])->assertRedirect('/produk');
+        $this->get('/produk')->assertSee('data-buka-awal="daftar"', false)->assertSee('id="e-dd-nama_lengkap"', false);
+    }
 }

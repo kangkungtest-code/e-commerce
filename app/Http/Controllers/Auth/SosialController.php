@@ -23,6 +23,7 @@ class SosialController extends Controller
     public function redirect(Request $request, string $provider): RedirectResponse
     {
         $p = ProviderSosial::cari($provider) ?? abort(404);
+        \App\Support\Kembali::simpan($request);
         $state = Str::random(40);
         $request->session()->put('oauth_state', $state);
 
