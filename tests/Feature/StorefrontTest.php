@@ -105,6 +105,11 @@ class StorefrontTest extends TestCase
         $this->assertLessThan(strpos($html, 'data-warna="Putih"'), strpos($html, 'data-warna="Hitam"'));
         $this->assertStringContainsString('hitam.webp" alt="Black T-Shirt"', $html);
 
+        // Kartu katalog: lebih dari 1 foto -> carousel; halaman produk: slide + thumbnail per foto.
+        $this->get(route('produk.index'))->assertSee('data-geser data-otomatis', false);
+        $this->assertSame(3, substr_count($html, 'class="geser-slide"'));
+        $this->assertStringContainsString('data-thumb="2"', $html);
+
         // Keranjang memakai foto sesuai warna varian.
         $this->post(route('keranjang.tambah'), ['product_id' => $this->kaos->id, 'opsi' => ['Warna' => 'Putih', 'Ukuran' => 'M'], 'qty' => 1]);
         $this->get(route('keranjang'))->assertSee('putih-thumb.webp', false)->assertDontSee('hitam-thumb.webp', false);

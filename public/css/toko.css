@@ -646,3 +646,29 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
 .footer-medsos span { color: var(--ink-soft); }
 .chat-email, .chat-telepon { background: var(--ink); }
 .chat-email:hover, .chat-telepon:hover { background: #000; }
+
+/* Carousel foto (scroll-snap: geser dengan jari, tanpa library) */
+.geser { position: relative; display: block; width: 100%; height: 100%; }
+.geser-jalur {
+    display: flex; width: 100%; height: 100%;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.geser-jalur::-webkit-scrollbar { display: none; }
+.geser-slide { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; scroll-snap-stop: always; user-select: none; }
+.geser-slide[hidden] { display: none; }
+.geser-titik { position: absolute; left: 0; right: 0; bottom: .6rem; display: flex; justify-content: center; gap: .35rem; pointer-events: none; }
+.geser-titik span { width: .45rem; height: .45rem; border-radius: 50%; background: rgba(255, 255, 255, .7); box-shadow: 0 0 0 1px rgba(31, 42, 34, .25); transition: transform .2s; }
+.geser-titik span.aktif { background: var(--ink); transform: scale(1.25); }
+.geser-satu .geser-titik, .geser-satu .geser-panah { display: none; }
+.geser-panah {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%;
+    background: rgba(245, 246, 242, .9); color: var(--ink); font-size: 1.6rem; line-height: 1; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .15); opacity: 0; transition: opacity .15s;
+}
+.geser-kiri { left: .6rem; }
+.geser-kanan { right: .6rem; }
+.geser:hover .geser-panah, .geser-panah:focus-visible { opacity: 1; }
+@media (hover: none) { .geser-panah { display: none; } }
+.galeri-utama .geser { aspect-ratio: 1; }

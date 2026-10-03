@@ -44,6 +44,8 @@ class TampilanProduk
             'nama' => $p->getTranslation('nama_terjemahan', app()->getLocale()),
             'kategori' => $p->category?->nama(),
             'foto' => $p->images->first()?->thumbUrl(),
+            // Untuk carousel kartu: maks 4 foto, cukup thumbnail 400px.
+            'foto_semua' => $p->images->take(4)->map(fn (ProductImage $i) => $i->thumbUrl())->values()->all(),
             'harga' => self::harga($harga->min() ?? 0),
             'mulai_dari' => $harga->unique()->count() > 1,
             'ringkas_opsi' => $opsi->map(fn (array $o) => trans_choice(':count '.$o['kunci'], count($o['nilai'])))->values()->all(),

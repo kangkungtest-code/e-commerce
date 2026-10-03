@@ -13,8 +13,21 @@
         <div class="produk">
             <div class="galeri" data-galeri data-opsi-warna="{{ $p['opsi_warna'] }}">
                 <div class="galeri-utama">
-                    @if ($p['foto'])
-                        <img src="{{ $p['foto'][0]['url'] }}" alt="{{ $p['nama'] }}" width="1600" height="1600" data-galeri-utama>
+                    @if (count($p['foto']) > 1)
+                        <div class="geser geser-besar" data-geser data-galeri-geser role="region" aria-roledescription="carousel" aria-label="{{ __('Product photos') }}">
+                            <div class="geser-jalur" data-geser-jalur>
+                                @foreach ($p['foto'] as $i => $f)
+                                    <img class="geser-slide" src="{{ $f['url'] }}" alt="{{ $i === 0 ? $p['nama'] : $p['nama'].' — '.__('photo :n', ['n' => $i + 1]) }}"
+                                         width="1600" height="1600" @if ($i > 0) loading="lazy" @endif draggable="false"
+                                         data-i="{{ $i }}" @if ($f['warna']) data-warna="{{ $f['warna'] }}" @endif>
+                                @endforeach
+                            </div>
+                            <button type="button" class="geser-panah geser-kiri" data-geser-sebelum aria-label="{{ __('Previous photo') }}">&#8249;</button>
+                            <button type="button" class="geser-panah geser-kanan" data-geser-berikut aria-label="{{ __('Next photo') }}">&#8250;</button>
+                            <span class="geser-titik" data-geser-titik aria-hidden="true"></span>
+                        </div>
+                    @elseif ($p['foto'])
+                        <img src="{{ $p['foto'][0]['url'] }}" alt="{{ $p['nama'] }}" width="1600" height="1600">
                     @else
                         <span class="tanpa-foto">{{ __('Photo coming soon') }}</span>
                     @endif
@@ -23,7 +36,7 @@
                     <ul class="galeri-thumb" aria-label="{{ __('Product photos') }}">
                         @foreach ($p['foto'] as $i => $f)
                             <li @if ($f['warna']) data-warna="{{ $f['warna'] }}" @endif>
-                                <button type="button" data-foto="{{ $f['url'] }}" @if ($i === 0) aria-current="true" @endif aria-label="{{ __('Show photo :n', ['n' => $i + 1]) }}">
+                                <button type="button" data-thumb="{{ $i }}" @if ($i === 0) aria-current="true" @endif aria-label="{{ __('Show photo :n', ['n' => $i + 1]) }}">
                                     <img src="{{ $f['thumb'] }}" alt="" width="400" height="400" loading="lazy">
                                 </button>
                             </li>

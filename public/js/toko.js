@@ -5,14 +5,82 @@
         el.addEventListener('change', () => el.form.submit());
     });
 
-    // Galeri foto.
+    // Carousel foto (kartu katalog & halaman produk): geser dengan jari (scroll-snap),
+    // titik penanda, panah, dan putar otomatis saat terlihat di layar.
+    const kurangiGerak = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pasangGeser = (root) => {
+        const jalur = root.querySelector('[data-geser-jalur]');
+        const titik = root.querySelector('[data-geser-titik]');
+        let sekarang = 0;
+        let timer = null;
+        let jeda = false;
+
+        const slides = () => [...jalur.querySelectorAll('.geser-slide')].filter((s) => !s.hidden);
+        const ke = (i, halus = true) => {
+            const s = slides();
+            if (!s.length) return;
+            sekarang = (i + s.length) % s.length;
+            jalur.scrollTo({ left: s[sekarang].offsetLeft - jalur.offsetLeft, behavior: halus && !kurangiGerak ? 'smooth' : 'auto' });
+            tandai();
+        };
+        const tandai = () => {
+            const s = slides();
+            if (titik) [...titik.children].forEach((d, i) => d.classList.toggle('aktif', i === sekarang));
+            root.classList.toggle('geser-satu', s.length <= 1);
+            root.dispatchEvent(new CustomEvent('geser:ganti', { detail: { slide: s[sekarang] } }));
+        };
+        const susun = () => {
+            if (titik) titik.replaceChildren(...slides().map(() => document.createElement('span')));
+            sekarang = 0;
+            jalur.scrollTo({ left: 0 });
+            tandai();
+        };
+
+        let tunda;
+        jalur.addEventListener('scroll', () => {
+            clearTimeout(tunda);
+            tunda = setTimeout(() => {
+                const lebar = jalur.clientWidth || 1;
+                const i = Math.round(jalur.scrollLeft / lebar);
+                if (i !== sekarang) { sekarang = Math.min(i, slides().length - 1); tandai(); }
+            }, 60);
+        }, { passive: true });
+
+        root.querySelector('[data-geser-sebelum]')?.addEventListener('click', (e) => { e.preventDefault(); ke(sekarang - 1); });
+        root.querySelector('[data-geser-berikut]')?.addEventListener('click', (e) => { e.preventDefault(); ke(sekarang + 1); });
+        root.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') ke(sekarang - 1);
+            if (e.key === 'ArrowRight') ke(sekarang + 1);
+        });
+
+        const otomatis = Number(root.dataset.otomatis || 0);
+        if (otomatis && !kurangiGerak && 'IntersectionObserver' in window) {
+            const jalan = () => { if (!timer) timer = setInterval(() => { if (!jeda && slides().length > 1) ke(sekarang + 1); }, otomatis); };
+            const henti = () => { clearInterval(timer); timer = null; };
+            new IntersectionObserver(([e]) => (e.isIntersecting ? jalan() : henti()), { threshold: 0.6 }).observe(root);
+            ['pointerenter', 'touchstart', 'focusin'].forEach((ev) => root.addEventListener(ev, () => { jeda = true; }, { passive: true }));
+            ['pointerleave', 'focusout'].forEach((ev) => root.addEventListener(ev, () => { jeda = false; }));
+        }
+
+        root.geser = { ke, susun, slides, get sekarang() { return sekarang; } };
+        susun();
+    };
+    document.querySelectorAll('[data-geser]').forEach(pasangGeser);
+
+    // Thumbnail halaman produk mengikuti & mengendalikan carousel.
     document.querySelectorAll('[data-galeri]').forEach((galeri) => {
-        const utama = galeri.querySelector('[data-galeri-utama]');
-        galeri.querySelectorAll('[data-foto]').forEach((btn) => {
+        const geser = galeri.querySelector('[data-galeri-geser]');
+        if (!geser) return;
+        galeri.querySelectorAll('[data-thumb]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                utama.src = btn.dataset.foto;
-                galeri.querySelectorAll('[data-foto]').forEach((b) => b.removeAttribute('aria-current'));
-                btn.setAttribute('aria-current', 'true');
+                const target = geser.geser.slides().findIndex((s) => s.dataset.i === btn.dataset.thumb);
+                if (target >= 0) geser.geser.ke(target);
+            });
+        });
+        geser.addEventListener('geser:ganti', (e) => {
+            const i = e.detail.slide?.dataset.i;
+            galeri.querySelectorAll('[data-thumb]').forEach((b) => {
+                if (b.dataset.thumb === i) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
             });
         });
     });
@@ -75,15 +143,15 @@
         const gantiFoto = () => {
             if (!galeri) return;
             const warna = terpilih()[galeri.dataset.opsiWarna];
-            const item = [...galeri.querySelectorAll('.galeri-thumb li')];
-            const milikWarna = item.filter((li) => warna && li.dataset.warna === warna);
-            item.forEach((li) => {
-                li.hidden = milikWarna.length > 0 && li.dataset.warna !== undefined && li.dataset.warna !== warna;
+            // Foto milik warna lain disembunyikan (thumbnail & slide); foto tanpa warna selalu tampil.
+            const item = [...galeri.querySelectorAll('.galeri-thumb li, .geser-slide')];
+            const adaFotoWarna = warna && item.some((el) => el.dataset.warna === warna);
+            item.forEach((el) => {
+                el.hidden = adaFotoWarna && el.dataset.warna !== undefined && el.dataset.warna !== warna;
             });
             const daftar = galeri.querySelector('.galeri-thumb');
-            if (daftar) daftar.hidden = item.filter((li) => !li.hidden).length <= 1;
-            const pertama = milikWarna[0]?.querySelector('[data-foto]');
-            if (pertama) pertama.click();
+            if (daftar) daftar.hidden = [...daftar.children].filter((li) => !li.hidden).length <= 1;
+            galeri.querySelector('[data-galeri-geser]')?.geser?.susun();
         };
 
         radios.forEach((r) => r.addEventListener('change', () => {
