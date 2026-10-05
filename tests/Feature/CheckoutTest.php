@@ -44,7 +44,7 @@ class CheckoutTest extends TestCase
         $res->assertRedirect(route('akun.pesanan.show', $order));
 
         $this->assertSame(Order::STATUS_MENUNGGU_PEMBAYARAN, $order->status);
-        $this->assertMatchesRegularExpression('/^KA-\d{6}-[A-Z0-9]{5}$/', $order->nomor);
+        $this->assertMatchesRegularExpression('/^'.preg_quote(config('toko.order.prefix_nomor'), '/').'-\d{6}-[A-Z0-9]{5}$/', $order->nomor);
         $this->assertSame('IDR', $order->mata_uang);
         $this->assertEquals(310000, $order->subtotal);
         $this->assertEquals(20000, $order->ongkir);
