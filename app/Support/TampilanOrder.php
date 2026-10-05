@@ -132,7 +132,7 @@ class TampilanOrder
                 'penjelasan' => TampilanRetur::penjelasan($r),
                 'catatan_admin' => $r->catatan_admin,
                 'resi_kembali' => $r->resi_kembali,
-                'alamat_retur' => config('toko.retur.alamat'),
+                'alamat_retur' => \App\Models\Pengaturan::ambil('retur.alamat') ?? config('toko.retur.alamat'),
             ] : null,
         ];
     }

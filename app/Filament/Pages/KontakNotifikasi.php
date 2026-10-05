@@ -38,7 +38,7 @@ class KontakNotifikasi extends Page
 
     protected static ?string $navigationLabel = 'Kontak & notifikasi';
 
-    protected static ?string $title = 'Kontak, media sosial & notifikasi email';
+    protected static ?string $title = 'Kontak, alamat retur, media sosial & notifikasi email';
 
     protected static ?string $slug = 'kontak';
 
@@ -63,6 +63,7 @@ class KontakNotifikasi extends Page
             'email' => Pengaturan::ambil('kontak.email'),
             'telepon' => KontakAdmin::teksTelepon(),
             'email_pemilik' => implode("\n", EmailPemilik::penerima()),
+            'alamat_retur' => Pengaturan::ambil('retur.alamat') ?? (config('toko.retur.alamat') ?: null),
             'email_jenis' => array_values(array_filter(array_keys(EmailPemilik::JENIS), fn ($j) => EmailPemilik::aktif($j))),
         ];
         foreach (array_keys(KontakAdmin::MEDSOS) as $k) {
@@ -96,6 +97,12 @@ class KontakNotifikasi extends Page
                             ->helperText('Akun resmi LINE diawali @.'),
                         TextInput::make('email')->label('Email layanan pelanggan')->email()->placeholder('halo@tokokamu.com'),
                         TextInput::make('telepon')->label('Telepon')->tel()->placeholder('021 1234 5678 atau +62 21 1234 5678'),
+                    ]),
+                Section::make('Alamat retur')
+                    ->description('Ditampilkan ke pembeli setelah pengajuan retur disetujui, sebagai tujuan kirim balik barang.')
+                    ->schema([
+                        Textarea::make('alamat_retur')->label('Alamat lengkap')->rows(3)->maxLength(500)
+                            ->placeholder("Nama penerima, nomor HP\nJalan, kelurahan, kecamatan\nKota, provinsi, kode pos"),
                     ]),
                 Section::make('Media sosial & marketplace')
                     ->description('Tautan tampil di footer semua halaman toko.')
@@ -144,6 +151,7 @@ class KontakNotifikasi extends Page
         foreach (array_keys(KontakAdmin::MEDSOS) as $k) {
             Pengaturan::simpan("medsos.{$k}", trim((string) ($d["medsos_{$k}"] ?? '')) ?: null);
         }
+        Pengaturan::simpan('retur.alamat', trim((string) ($d['alamat_retur'] ?? '')) ?: null);
         Pengaturan::simpan('email_pemilik.alamat', implode(',', EmailPemilik::pecah($d['email_pemilik'] ?? null)) ?: null);
         foreach (array_keys(EmailPemilik::JENIS) as $j) {
             Pengaturan::simpan("email_pemilik.{$j}", in_array($j, $d['email_jenis'] ?? [], true) ? '1' : '0');

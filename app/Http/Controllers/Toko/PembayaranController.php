@@ -27,7 +27,7 @@ class PembayaranController extends Controller
 
         $data = $request->validate([
             'metode' => ['required', Rule::in([Payment::GATEWAY_PAYPAL, Payment::GATEWAY_QRIS, Payment::GATEWAY_VA])],
-            'bank' => ['required_if:metode,'.Payment::GATEWAY_VA, 'nullable', Rule::in(config('services.xendit.va_banks'))],
+            'bank' => ['required_if:metode,'.Payment::GATEWAY_VA, 'nullable', Rule::in(\App\Support\AkunPembayaran::bankVa())],
         ]);
 
         try {
