@@ -1,4 +1,4 @@
-/* Storefront Kangkung Apparel — tanpa build step, font self-hosted. */
+/* Storefront — warna bisa diganti per toko lewat toko/profil.php ('tema'). tanpa build step, font self-hosted. */
 
 @font-face {
     font-family: 'Bricolage';
@@ -98,6 +98,8 @@ a { color: inherit; }
     text-decoration: none;
     line-height: 1;
 }
+.wordmark:has(.logo) { display: inline-flex; align-items: center; gap: .6rem; }
+.wordmark .logo { width: 2.5rem; height: 2.5rem; object-fit: contain; border-radius: var(--radius-foto); }
 .wordmark-kecil { font-size: 1.25rem; margin: 0; }
 
 .nav { display: flex; gap: 1.25rem; margin-right: auto; }
@@ -621,7 +623,7 @@ label.kartu-alamat input { margin-top: .3rem; accent-color: var(--kangkung); }
 .progres-langkah .langkah-lewat::before, .progres-langkah .langkah-sekarang::before { background: var(--kangkung); }
 .progres-langkah .langkah-lewat .titik { background: var(--kangkung); border-color: var(--kangkung); }
 .progres-langkah .langkah-sekarang { color: var(--ink); }
-.progres-langkah .langkah-sekarang .titik { border-color: var(--kangkung); box-shadow: 0 0 0 4px rgba(74, 127, 69, .2); }
+.progres-langkah .langkah-sekarang .titik { border-color: var(--kangkung); box-shadow: 0 0 0 4px color-mix(in srgb, var(--kangkung) 22%, transparent); }
 @media (max-width: 480px) {
     .progres-langkah li { font-size: .8125rem; padding: 0 .1rem; }
     .progres-langkah .langkah-waktu { font-size: .75rem; }

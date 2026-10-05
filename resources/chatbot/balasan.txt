@@ -1,5 +1,5 @@
 # ================================================================
-#  File balasan chatbot Kangkung Apparel
+#  File balasan chatbot. Tulisan {toko} otomatis diganti nama toko.
 # ================================================================
 #  Cara menulis:
 #  - Satu topik diawali baris "== nama-topik" (huruf kecil, tanpa spasi).
@@ -16,9 +16,9 @@
 # ================================================================
 
 == sapaan
-jawab.id: Halo! Saya asisten otomatis Kangkung Apparel. Tanyakan soal ukuran, ongkir, pembayaran, atau retur. Kalau butuh bantuan langsung, saya hubungkan ke admin.
-jawab.en: Hi! I'm Kangkung Apparel's automated assistant. Ask me about sizes, shipping, payment or returns. If you need a person, I'll connect you to our team.
-jawab.zh_TW: 您好！我是 Kangkung Apparel 的自動客服。可以詢問尺寸、運費、付款或退貨問題。如需真人協助，我會幫您聯繫客服。
+jawab.id: Halo! Saya asisten otomatis {toko}. Tanyakan soal ukuran, ongkir, pembayaran, atau retur. Kalau butuh bantuan langsung, saya hubungkan ke admin.
+jawab.en: Hi! I'm {toko}'s automated assistant. Ask me about sizes, shipping, payment or returns. If you need a person, I'll connect you to our team.
+jawab.zh_TW: 您好！我是 {toko} 的自動客服。可以詢問尺寸、運費、付款或退貨問題。如需真人協助，我會幫您聯繫客服。
 
 == tidak-ketemu
 admin: ya

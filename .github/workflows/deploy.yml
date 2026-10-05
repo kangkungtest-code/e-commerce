@@ -7,6 +7,8 @@ name: Deploy
 #   2. job `deploy` — hanya kalau test lulus:
 #        claude-dev -> /var/www/dev   (http://<IP>:8080, database toko_dev,  APP_ENV=dev)
 #        main       -> /var/www/demo  (http://<IP>/,     database toko_demo, APP_ENV=demo)
+#        toko-fastandflux -> /var/www/fastandflux (https://fastandflux.duckdns.org,
+#                     database toko_fastandflux, APP_ENV=demo). Identitas toko di toko/profil.php.
 #
 # Secrets (repository secrets):
 #   SERVER_HOST, SERVER_USER, SERVER_SSH_KEY, DB_PASSWORD  — wajib untuk deploy
@@ -16,7 +18,7 @@ name: Deploy
 
 on:
   push:
-    branches: [claude-dev, main]
+    branches: [claude-dev, main, toko-fastandflux]
   workflow_dispatch:
 
 concurrency:
@@ -119,7 +121,13 @@ jobs:
       - name: Tentukan target
         id: target
         run: |
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+          if [ "${GITHUB_REF_NAME}" = "toko-fastandflux" ]; then
+            echo "dir=/var/www/fastandflux" >> "$GITHUB_OUTPUT"
+            echo "db=toko_fastandflux"      >> "$GITHUB_OUTPUT"
+            echo "env=demo"                 >> "$GITHUB_OUTPUT"
+            echo "debug=false"              >> "$GITHUB_OUTPUT"
+            echo "url=https://fastandflux.duckdns.org" >> "$GITHUB_OUTPUT"
+          elif [ "${GITHUB_REF_NAME}" = "main" ]; then
             echo "dir=/var/www/demo"  >> "$GITHUB_OUTPUT"
             echo "db=toko_demo"       >> "$GITHUB_OUTPUT"
             echo "env=demo"           >> "$GITHUB_OUTPUT"
@@ -241,7 +249,9 @@ jobs:
               set_env GOOGLE_CLIENT_SECRET "${TOKO_GOOGLE_CLIENT_SECRET:-}"
               set_env LINE_CHANNEL_ID "${TOKO_LINE_CHANNEL_ID:-}"
               set_env LINE_CHANNEL_SECRET "${TOKO_LINE_CHANNEL_SECRET:-}"
-              set_env APP_NAME '"Kangkung Apparel"'
+              # Nama aplikasi (pengirim email, dll.) = nama toko di toko/profil.php.
+              NAMA_TOKO="$(php -r '$p = is_file("toko/profil.php") ? require "toko/profil.php" : []; echo str_replace("\"", "", $p["nama"] ?? "Toko");')"
+              set_env APP_NAME "\"${NAMA_TOKO}\""
               set_env QUEUE_CONNECTION database
               # Email: SMTP kalau secret MAIL_HOST diisi; kalau belum, email hanya dicatat di log.
               if [ -n "${TOKO_MAIL_HOST:-}" ]; then

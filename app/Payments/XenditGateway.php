@@ -120,6 +120,45 @@ class XenditGateway implements PaymentGateway
         );
     }
 
+    /**
+     * Tanya langsung ke Xendit status tagihan ini. Cadangan kalau webhook tidak sampai,
+     * mis. toko kedua yang memakai akun Xendit yang sama (webhook hanya 1 URL per akun).
+     * Hasilnya diproses KonfirmasiPembayaranAction persis seperti webhook.
+     */
+    public function cekStatus(Payment $payment): HasilWebhook
+    {
+        if (! $this->aktif() || ! $payment->transaksi_id_eksternal) {
+            return HasilWebhook::abaikan();
+        }
+
+        try {
+            $d = $this->http()->get("/v3/payment_requests/{$payment->transaksi_id_eksternal}")->throw()->json();
+        } catch (RequestException|\Illuminate\Http\Client\ConnectionException) {
+            return HasilWebhook::abaikan();
+        }
+
+        // Pastikan tagihan ini memang milik Payment kita.
+        if (($d['reference_id'] ?? null) !== $payment->id) {
+            return HasilWebhook::abaikan($d);
+        }
+
+        $status = match ($d['status'] ?? null) {
+            'SUCCEEDED' => 'berhasil',
+            'EXPIRED' => 'kadaluarsa',
+            'FAILED', 'CANCELED' => 'gagal',
+            default => 'abaikan',
+        };
+
+        return new HasilWebhook(
+            $status,
+            paymentId: $payment->id,
+            transaksiId: $d['payment_request_id'] ?? $payment->transaksi_id_eksternal,
+            jumlah: isset($d['request_amount']) ? (float) $d['request_amount'] : null,
+            mataUang: $d['currency'] ?? null,
+            raw: ['sumber' => 'cek_status'] + $d,
+        );
+    }
+
     /** Simulasi bayar hanya untuk kunci test dan di luar production. */
     public function bisaSimulasi(): bool
     {

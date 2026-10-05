@@ -3,8 +3,8 @@
 @section('isi')
     <section class="hero wrap">
         <div class="hero-teks">
-            <h1 class="display">{{ __('Everyday basics in honest colors.') }}</h1>
-            <p class="lead">{{ __('Cotton, linen and denim made to be worn often. Ships from Indonesia to Indonesia and Taiwan.') }}</p>
+            <h1 class="display">{{ \App\Support\Tema::beranda('judul') ?? __('Everyday basics in honest colors.') }}</h1>
+            <p class="lead">{{ \App\Support\Tema::beranda('teks') ?? __('Cotton, linen and denim made to be worn often. Ships from Indonesia to Indonesia and Taiwan.') }}</p>
             <a class="tombol" href="{{ route('produk.index') }}">{{ __('Browse the collection') }}</a>
         </div>
 

@@ -32,6 +32,10 @@
     @endforeach
     <link rel="preload" href="{{ asset('fonts/bricolage/bricolage-grotesque-latin-standard-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('css/toko.css') }}?v={{ filemtime(public_path('css/toko.css')) }}">
+    @if ($temaCss = \App\Support\Tema::css())<style>{!! $temaCss !!}</style>
+    @endif
+    @if ($logo = \App\Support\Tema::logo())<link rel="icon" href="{{ $logo }}">
+    @endif
     <script src="{{ asset('js/toko.js') }}?v={{ filemtime(public_path('js/toko.js')) }}" defer></script>
 </head>
 <body>
@@ -39,7 +43,7 @@
 
     <header class="topbar">
         <div class="wrap topbar-inner">
-            <a class="wordmark" href="{{ route('home') }}">{{ config('toko.nama') }}</a>
+            <a class="wordmark" href="{{ route('home') }}">@if ($logo)<img class="logo" src="{{ $logo }}" alt="" width="40" height="40">@endif{{ config('toko.nama') }}</a>
 
             <nav class="nav" aria-label="{{ __('Main navigation') }}">
                 <a href="{{ route('produk.index') }}" @class(['aktif' => request()->routeIs('produk.*')])>{{ __('Shop') }}</a>

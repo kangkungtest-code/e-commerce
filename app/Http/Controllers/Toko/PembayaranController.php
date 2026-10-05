@@ -15,6 +15,7 @@ use App\Payments\XenditGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
@@ -100,10 +101,36 @@ class PembayaranController extends Controller
     }
 
     /** Dipakai halaman order untuk mengecek apakah pembayaran QRIS/VA sudah masuk. */
-    public function status(Request $request, Order $order): JsonResponse
+    public function status(Request $request, Order $order, KonfirmasiPembayaranAction $konfirmasi): JsonResponse
     {
         abort_unless($order->user_id === $request->user()->id, 404);
 
+        if ($order->status === Order::STATUS_MENUNGGU_PEMBAYARAN) {
+            $this->cekKeXendit($order, $konfirmasi);
+            $order->refresh();
+        }
+
         return response()->json(['status' => $order->status]);
+    }
+
+    /**
+     * Webhook biasanya lebih dulu sampai. Kalau belum (atau tidak akan pernah, mis. toko
+     * kedua yang memakai akun Xendit yang sama), tanya langsung ke Xendit — paling sering
+     * sekali per 15 detik per tagihan.
+     */
+    private function cekKeXendit(Order $order, KonfirmasiPembayaranAction $konfirmasi): void
+    {
+        $payment = $order->payments()
+            ->where('status', Payment::PENDING)
+            ->whereIn('gateway', [Payment::GATEWAY_QRIS, Payment::GATEWAY_VA])
+            ->whereNotNull('transaksi_id_eksternal')
+            ->latest()->first();
+
+        $gateway = $payment ? MetodePembayaran::gateway($payment->gateway) : null;
+        if (! $gateway instanceof XenditGateway || ! Cache::add("cek-xendit-{$payment->id}", 1, 15)) {
+            return;
+        }
+
+        $konfirmasi->execute($gateway->cekStatus($payment));
     }
 }

@@ -1,8 +1,33 @@
 <?php
 
+// Identitas toko (nama, logo, warna, katalog awal) ada di toko/profil.php.
+$profil = (file_exists($f = base_path('toko/profil.php')) ? require $f : []) + [
+    'nama' => 'Kangkung Apparel',
+    'prefix_order' => 'KA',
+    'logo' => null,
+    'tema' => [],
+    'warna_admin' => null,
+    'beranda' => null,
+    'katalog' => null,
+];
+
 return [
     /* Nama toko di storefront. */
-    'nama' => env('TOKO_NAMA', 'Kangkung Apparel'),
+    'nama' => env('TOKO_NAMA', $profil['nama']),
+
+    /* Logo (path di public/), null = tulisan nama toko. */
+    'logo' => $profil['logo'],
+
+    /* Variabel CSS storefront yang diganti, mis. ['--kangkung' => '#c8102e']. */
+    'tema' => $profil['tema'],
+
+    'warna_admin' => $profil['warna_admin'],
+
+    /* ['judul' => [locale => teks], 'teks' => [locale => teks]] atau null. */
+    'beranda' => $profil['beranda'],
+
+    /* File data katalog awal di folder toko/, null = database/data/katalog-demo.php. */
+    'katalog' => $profil['katalog'],
 
     /*
     | Bahasa yang didukung untuk konten (produk, FAQ) dan UI.
@@ -46,7 +71,7 @@ return [
     'zona_waktu' => env('TOKO_ZONA_WAKTU', 'Asia/Makassar'),
 
     'order' => [
-        'prefix_nomor' => env('TOKO_PREFIX_ORDER', 'KA'),
+        'prefix_nomor' => env('TOKO_PREFIX_ORDER', $profil['prefix_order']),
         // Batas bayar sejak order dibuat; lewat dari ini order kadaluarsa dan stok dilepas.
         'batas_bayar_jam' => (int) env('TOKO_BATAS_BAYAR_JAM', 24),
         'maks_qty_per_item' => 20,

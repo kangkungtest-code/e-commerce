@@ -16,7 +16,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Katalog contoh toko baju untuk server dev/demo (data di database/data/katalog-demo.php).
+ * Katalog awal untuk server dev/demo. Data dari file yang ditunjuk toko/profil.php
+ * ('katalog', relatif ke folder toko/), atau database/data/katalog-demo.php.
+ * Produk boleh punya 'foto' => [kode warna => nama file di toko/foto/]; tanpa itu
+ * dipakai foto siluet polos.
  *
  * Idempotent per produk: produk yang SKU pertamanya sudah ada dilewati, jadi
  * produk buatan admin tidak tersentuh dan seeder aman dijalankan tiap deploy.
@@ -25,7 +28,7 @@ class DemoCatalogSeeder extends Seeder
 {
     public function run(): void
     {
-        $data = require database_path('data/katalog-demo.php');
+        $data = require self::fileData();
 
         $dibuat = 0;
         foreach ($data['produk'] as $p) {
@@ -53,6 +56,13 @@ class DemoCatalogSeeder extends Seeder
         }
 
         $this->command?->info("Katalog demo: {$dibuat} produk baru.");
+    }
+
+    public static function fileData(): string
+    {
+        $katalog = config('toko.katalog');
+
+        return $katalog ? base_path('toko/'.ltrim($katalog, '/')) : database_path('data/katalog-demo.php');
     }
 
     /** Tarif contoh (perkiraan, bukan tarif kurir sungguhan). */
@@ -115,7 +125,9 @@ class DemoCatalogSeeder extends Seeder
                 }
 
                 $product->images()->create([
-                    'path' => $this->fotoPlaceholder($p['bentuk'], $palet[$kodeWarna][3]),
+                    'path' => isset($p['foto'][$kodeWarna])
+                        ? $this->fotoAsli($p['foto'][$kodeWarna])
+                        : $this->fotoPlaceholder($p['bentuk'] ?? 'kotak', $palet[$kodeWarna][3]),
                     'warna' => $palet[$kodeWarna][0],
                     'urutan' => $wi + 1,
                 ]);
@@ -144,6 +156,20 @@ class DemoCatalogSeeder extends Seeder
     private function sku(string $kode, string $warna, string $ukuran): string
     {
         return strtoupper($kode.'-'.$warna.'-'.str_replace(' ', '', $ukuran));
+    }
+
+    /** Foto produk sungguhan dari folder toko/foto/, disimpan lewat jalur upload biasa. */
+    private function fotoAsli(string $nama): string
+    {
+        $asal = base_path('toko/foto/'.basename($nama));
+        $tmp = tempnam(sys_get_temp_dir(), 'foto');
+        copy($asal, $tmp); // UploadedFile test-mode boleh dipindah, jadi pakai salinan.
+
+        try {
+            return app(ProductImageStorage::class)->store(new UploadedFile($tmp, basename($nama), mime_content_type($asal) ?: null, null, true));
+        } finally {
+            @unlink($tmp);
+        }
     }
 
     /** Gambar siluet pakaian sederhana di atas latar polos, disimpan lewat jalur upload biasa. */

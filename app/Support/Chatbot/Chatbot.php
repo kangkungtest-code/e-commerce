@@ -183,7 +183,10 @@ class Chatbot
 
     private function teks(array $peta, string $locale): string
     {
-        return $peta[$locale] ?? $peta['en'] ?? $peta['id'] ?? reset($peta) ?: '';
+        $teks = $peta[$locale] ?? $peta['en'] ?? $peta['id'] ?? reset($peta) ?: '';
+
+        // {toko} = nama toko (config), supaya file balasan bisa dipakai toko lain.
+        return str_replace('{toko}', (string) config('toko.nama'), $teks);
     }
 
     /** @return array{teks: string, admin: bool, topik: string} */

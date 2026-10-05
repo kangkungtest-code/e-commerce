@@ -125,6 +125,29 @@ class PembayaranTest extends TestCase
         $this->assertStringContainsString('diterima, pembayaran berhasil', \App\Models\Pengaturan::ambil('webhook_terakhir.xendit'));
     }
 
+    public function test_cek_status_langsung_ke_xendit_tanpa_webhook(): void
+    {
+        $this->fakeXendit();
+        $order = $this->order();
+        $this->actingAs($this->user, 'web')->post(route('akun.pesanan.bayar', $order), ['metode' => 'xendit_qris']);
+        $p = Payment::firstOrFail();
+
+        // Tagihan milik orang lain / masih menunggu -> tidak berubah.
+        Http::fake(['api.xendit.co/v3/payment_requests/pr-123' => Http::sequence()
+            ->push(['payment_request_id' => 'pr-123', 'reference_id' => 'bukan-punya-kita', 'status' => 'SUCCEEDED', 'request_amount' => 220000, 'currency' => 'IDR'])
+            ->push(['payment_request_id' => 'pr-123', 'reference_id' => $p->id, 'status' => 'SUCCEEDED', 'request_amount' => 220000, 'currency' => 'IDR']),
+        ]);
+        $this->getJson(route('akun.pesanan.status', $order))->assertJson(['status' => Order::STATUS_MENUNGGU_PEMBAYARAN]);
+
+        // Dibatasi: dalam 15 detik tidak bertanya lagi ke Xendit.
+        $this->getJson(route('akun.pesanan.status', $order))->assertJson(['status' => Order::STATUS_MENUNGGU_PEMBAYARAN]);
+        Http::assertSentCount(1); // hanya 1x cek (catatan request direset oleh Http::fake kedua)
+
+        $this->travel(16)->seconds();
+        $this->getJson(route('akun.pesanan.status', $order))->assertJson(['status' => Order::STATUS_DIBAYAR]);
+        $this->assertSame(Payment::BERHASIL, $p->fresh()->status);
+    }
+
     public function test_simulasi_tidak_ada_untuk_kunci_live_atau_orang_lain(): void
     {
         $this->fakeXendit();

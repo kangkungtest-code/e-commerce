@@ -27,9 +27,14 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->authGuard('admin')
-            ->brandName('Toko Admin')
+            ->brandName(config('toko.nama').' Admin')
+            // Logo toko (kalau ada) di samping nama, bukan menggantikan nama.
+            ->brandLogo(fn () => ($logo = \App\Support\Tema::logo())
+                ? new \Illuminate\Support\HtmlString('<span style="display:inline-flex;align-items:center;gap:.6rem;font-weight:700"><img src="'.e($logo).'" alt="" style="height:2rem;width:2rem;object-fit:contain;border-radius:4px">'.e(config('toko.nama').' Admin').'</span>')
+                : null)
+            ->favicon(fn () => \App\Support\Tema::logo())
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => config('toko.warna_admin') ? Color::hex(config('toko.warna_admin')) : Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
