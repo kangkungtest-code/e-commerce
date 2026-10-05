@@ -24,6 +24,7 @@ return [
         '--kangkung-dark' => '#9a0c23',
         '--sage' => '#f6e3e5',
         '--line' => '#d8d4d0',
+        '--ok' => '#1f7a3d',
     ],
 
     'warna_admin' => '#c8102e',
