@@ -68,6 +68,8 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          # Port 2222: jaringan Biznet memblokir port 22 dari GitHub (5 Okt 2026). Bisa diganti lewat secret SERVER_PORT.
+          port: ${{ secrets.SERVER_PORT || '2222' }}
           command_timeout: 40m
           envs: DB_PASSWORD,DEV_DOMAIN,TOKO_LAIN
           script: |
@@ -312,9 +314,13 @@ jobs:
             done
             sudo systemctl enable --now certbot.timer 2>/dev/null || true
 
+            echo "==> SSH juga di port 2222 (port 22 dari GitHub diblokir jaringan Biznet), login password dimatikan"
+            printf 'Port 22\nPort 2222\nPasswordAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/10-toko.conf >/dev/null
+
             echo "==> Firewall (ufw)"
             sudo ufw allow OpenSSH
             sudo ufw allow 22/tcp
+            sudo ufw allow 2222/tcp
             sudo ufw allow 80/tcp
             sudo ufw allow 443/tcp
             sudo ufw allow 8080/tcp
