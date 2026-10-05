@@ -4,6 +4,7 @@ namespace App\Payments;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\AkunPembayaran;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class PayPalGateway implements PaymentGateway
 
     private function cfg(string $k): ?string
     {
-        return config("services.paypal.{$k}");
+        return AkunPembayaran::nilai("paypal.{$k}") ?? ($k === 'mode' ? 'sandbox' : null);
     }
 
     public function aktif(): bool

@@ -15,7 +15,7 @@ class MulaiPembayaranAction
 {
     public function execute(Order $order, string $metode, array $opsi = []): Payment
     {
-        $gateway = MetodePembayaran::gateway($metode) ?? throw new TokoException(__('This payment method is not available.'));
+        $gateway = (MetodePembayaran::ditawarkan($metode) ? MetodePembayaran::gateway($metode) : null) ?? throw new TokoException(__('This payment method is not available.'));
         $mataUang = $gateway->mataUangUntuk($order);
         $tagihan = $mataUang ? MetodePembayaran::tagihan($order, $mataUang) : null;
         if (! $tagihan) {

@@ -33,9 +33,20 @@ class MetodePembayaran
         return $g && $g->aktif() ? $g : null;
     }
 
+    /**
+     * Boleh dipilih pembeli: akunnya lengkap DAN tidak dimatikan pemilik di panel.
+     * (gateway() tetap mengembalikan metode yang dimatikan supaya webhook & refund
+     * transaksi lama tetap jalan.)
+     */
+    public static function ditawarkan(string $kode): bool
+    {
+        return self::gateway($kode) !== null && \App\Support\AkunPembayaran::metodeNyala($kode)
+            && ($kode !== Payment::GATEWAY_VA || \App\Support\AkunPembayaran::bankVa() !== []);
+    }
+
     public static function adaYangAktif(): bool
     {
-        return collect(self::semua())->contains(fn (PaymentGateway $g) => $g->aktif());
+        return collect(array_keys(self::semua()))->contains(fn (string $kode) => self::ditawarkan($kode));
     }
 
     public static function label(string $kode): string
@@ -93,7 +104,7 @@ class MetodePembayaran
         $hasil = [];
 
         foreach (self::semua() as $kode => $g) {
-            if (! $g->aktif() || ! ($mu = $g->mataUangUntuk($order)) || ! ($t = self::tagihan($order, $mu))) {
+            if (! self::ditawarkan($kode) || ! ($mu = $g->mataUangUntuk($order)) || ! ($t = self::tagihan($order, $mu))) {
                 continue;
             }
 

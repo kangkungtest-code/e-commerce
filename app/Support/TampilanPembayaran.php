@@ -26,7 +26,7 @@ class TampilanPembayaran
             'bisa_bayar' => $bisaBayar,
             'ada_gateway' => MetodePembayaran::adaYangAktif(),
             'pilihan' => $bisaBayar ? MetodePembayaran::pilihan($o) : [],
-            'bank' => config('services.xendit.va_banks'),
+            'bank' => \App\Support\AkunPembayaran::bankVa(),
             'aktif' => $aktif ? self::tagihan($aktif) : null,
             'simulasi' => $aktif && self::bisaSimulasi($aktif) ? [
                 'webhook' => \App\Http\Controllers\WebhookPembayaranController::terakhir('xendit'),

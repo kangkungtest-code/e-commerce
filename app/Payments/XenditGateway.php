@@ -4,6 +4,7 @@ namespace App\Payments;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\AkunPembayaran;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
@@ -23,14 +24,14 @@ class XenditGateway implements PaymentGateway
 
     public function aktif(): bool
     {
-        $kunci = (string) config('services.xendit.secret_key');
+        $kunci = (string) AkunPembayaran::nilai('xendit.secret_key');
 
         // Di dev/demo hanya boleh kunci test (xnd_development_...).
         if (str_starts_with($kunci, 'xnd_production') && ! app()->isProduction()) {
             return false;
         }
 
-        return $kunci !== '' && filled(config('services.xendit.callback_token'));
+        return $kunci !== '' && filled(AkunPembayaran::nilai('xendit.callback_token'));
     }
 
     public function mataUangUntuk(Order $order): ?string
@@ -40,7 +41,7 @@ class XenditGateway implements PaymentGateway
 
     private function http(): PendingRequest
     {
-        return Http::withBasicAuth((string) config('services.xendit.secret_key'), '')
+        return Http::withBasicAuth((string) AkunPembayaran::nilai('xendit.secret_key'), '')
             ->withHeaders(['api-version' => self::API_VERSION])
             ->acceptJson()->asJson()->timeout(20)->baseUrl(self::BASE);
     }
@@ -48,7 +49,7 @@ class XenditGateway implements PaymentGateway
     public function buat(Payment $payment, Order $order, array $opsi = []): void
     {
         $bank = strtoupper((string) ($opsi['bank'] ?? ''));
-        if ($this->jenis === 'va' && ! in_array($bank, config('services.xendit.va_banks'), true)) {
+        if ($this->jenis === 'va' && ! in_array($bank, AkunPembayaran::bankVa(), true)) {
             throw new GatewayException("Bank VA tidak dikenal: {$bank}");
         }
 
@@ -95,7 +96,7 @@ class XenditGateway implements PaymentGateway
 
     public function bacaWebhook(Request $request): HasilWebhook
     {
-        $token = (string) config('services.xendit.callback_token');
+        $token = (string) AkunPembayaran::nilai('xendit.callback_token');
         if ($token === '' || ! hash_equals($token, (string) $request->header('x-callback-token'))) {
             throw new WebhookTidakSah('x-callback-token Xendit tidak cocok.');
         }
@@ -164,7 +165,7 @@ class XenditGateway implements PaymentGateway
     {
         return $this->aktif()
             && ! app()->isProduction()
-            && str_starts_with((string) config('services.xendit.secret_key'), 'xnd_development_');
+            && str_starts_with((string) AkunPembayaran::nilai('xendit.secret_key'), 'xnd_development_');
     }
 
     /**
