@@ -30,3 +30,7 @@ Thumbs.db
 /public/css/filament
 /public/js/filament
 /public/fonts/filament
+
+# Deploy tarik (ditulis server)
+/public/deploy-status.txt
+/.tarik-gagal

@@ -4,17 +4,14 @@ name: Deploy
 #   1. job `test`  — composer install, migrate:fresh --seed ke MySQL, php artisan test.
 #                    Kalau composer.lock belum ada, dibuat di sini lalu di-commit balik
 #                    ke branch yang sama.
-#   2. job `deploy` — hanya kalau test lulus:
+#   2. job `deploy` — menunggu server menarik commit ini (deploy/tarik.sh), lihat catatan di job:
 #        claude-dev -> /var/www/dev   (http://<IP>:8080, database toko_dev,  APP_ENV=dev)
 #        main       -> /var/www/demo  (http://<IP>/,     database toko_demo, APP_ENV=demo)
 #        toko-fastandflux -> /var/www/fastandflux (https://fastandflux.duckdns.org,
 #                     database toko_fastandflux, APP_ENV=demo). Identitas toko di toko/profil.php.
 #
-# Secrets (repository secrets):
-#   SERVER_HOST, SERVER_USER, SERVER_SSH_KEY, DB_PASSWORD  — wajib untuk deploy
-#   ADMIN_EMAIL (opsional, default admin@toko.test), ADMIN_PASSWORD — akun admin awal
-# Kalau secrets server belum diisi atau server belum di-provision, deploy dilewati
-# dengan peringatan (tidak gagal merah).
+# Secret server (SERVER_*, DB_PASSWORD, dst.) tidak dipakai lagi oleh workflow ini;
+# masih dipakai provision.yml kalau suatu saat SSH dari GitHub terbuka lagi.
 
 on:
   push:
@@ -111,252 +108,45 @@ jobs:
           msg=$(tail -n 60 /tmp/ci.log | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
           echo "::error title=Test gagal (60 baris terakhir)::${msg}"
 
+  # Sejak 5 Okt 2026 jaringan Biznet memblokir sambungan dari GitHub ke server, jadi
+  # deploy tidak lagi lewat SSH. Server sendiri yang mengecek GitHub tiap menit
+  # (deploy/tarik.sh, dipasang lewat deploy/pasang-tarik.sh) dan memasang commit yang
+  # job `test`-nya lulus. Job ini hanya menunggu & melaporkan hasilnya dari
+  # <url>/deploy-status.txt. .env di server tidak lagi diisi dari secret GitHub
+  # (kunci pembayaran diisi di panel admin → Pengaturan → Pembayaran).
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      HAS_SECRETS: ${{ secrets.SERVER_HOST != '' && secrets.SERVER_USER != '' && secrets.SERVER_SSH_KEY != '' && secrets.DB_PASSWORD != '' }}
+    timeout-minutes: 15
     steps:
       - name: Tentukan target
         id: target
         run: |
-          if [ "${GITHUB_REF_NAME}" = "toko-fastandflux" ]; then
-            echo "dir=/var/www/fastandflux" >> "$GITHUB_OUTPUT"
-            echo "db=toko_fastandflux"      >> "$GITHUB_OUTPUT"
-            echo "env=demo"                 >> "$GITHUB_OUTPUT"
-            echo "debug=false"              >> "$GITHUB_OUTPUT"
-            echo "url=https://fastandflux.duckdns.org" >> "$GITHUB_OUTPUT"
-          elif [ "${GITHUB_REF_NAME}" = "main" ]; then
-            echo "dir=/var/www/demo"  >> "$GITHUB_OUTPUT"
-            echo "db=toko_demo"       >> "$GITHUB_OUTPUT"
-            echo "env=demo"           >> "$GITHUB_OUTPUT"
-            echo "debug=false"        >> "$GITHUB_OUTPUT"
-            echo "url=http://${{ secrets.SERVER_HOST }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "dir=/var/www/dev"   >> "$GITHUB_OUTPUT"
-            echo "db=toko_dev"        >> "$GITHUB_OUTPUT"
-            echo "env=dev"            >> "$GITHUB_OUTPUT"
-            echo "debug=true"         >> "$GITHUB_OUTPUT"
-            # Domain dev (DuckDNS) + HTTPS dipasang oleh provision.yml.
-            echo "url=https://kangkungdev.duckdns.org" >> "$GITHUB_OUTPUT"
-          fi
+          case "${GITHUB_REF_NAME}" in
+            toko-fastandflux) echo "url=https://fastandflux.duckdns.org" >> "$GITHUB_OUTPUT" ;;
+            main)             echo "url=http://103.103.23.222" >> "$GITHUB_OUTPUT" ;;
+            *)                echo "url=https://kangkungdev.duckdns.org" >> "$GITHUB_OUTPUT" ;;
+          esac
 
-      - name: Lewati (secrets belum diisi)
-        if: env.HAS_SECRETS != 'true'
-        run: echo "::warning::Secrets SERVER_HOST/SERVER_USER/SERVER_SSH_KEY/DB_PASSWORD belum lengkap, deploy dilewati."
-
-      - name: Deploy via SSH
-        if: env.HAS_SECRETS == 'true'
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Tunggu server memasang commit ini
         env:
-          TOKO_BRANCH: ${{ github.ref_name }}
-          TOKO_REPO: ${{ github.repository }}
-          TOKO_GH_TOKEN: ${{ github.token }}
-          TOKO_TARGET: ${{ steps.target.outputs.dir }}
-          TOKO_DB_NAME: ${{ steps.target.outputs.db }}
-          TOKO_APP_ENV_VAL: ${{ steps.target.outputs.env }}
-          TOKO_APP_DEBUG_VAL: ${{ steps.target.outputs.debug }}
-          TOKO_APP_URL_VAL: ${{ steps.target.outputs.url }}
-          TOKO_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          TOKO_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          TOKO_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          TOKO_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          TOKO_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          TOKO_LINE_CHANNEL_ID: ${{ secrets.LINE_CHANNEL_ID }}
-          TOKO_LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
-          TOKO_MAIL_HOST: ${{ secrets.MAIL_HOST }}
-          TOKO_MAIL_PORT: ${{ secrets.MAIL_PORT }}
-          TOKO_MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          TOKO_MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-          TOKO_MAIL_FROM_ADDRESS: ${{ secrets.MAIL_FROM_ADDRESS }}
-          TOKO_ALAMAT_RETUR: ${{ secrets.TOKO_ALAMAT_RETUR }}
-          TOKO_PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
-          TOKO_PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
-          TOKO_PAYPAL_WEBHOOK_ID: ${{ secrets.PAYPAL_WEBHOOK_ID }}
-          TOKO_XENDIT_SECRET_KEY: ${{ secrets.XENDIT_SECRET_KEY }}
-          TOKO_XENDIT_CALLBACK_TOKEN: ${{ secrets.XENDIT_CALLBACK_TOKEN }}
-          TOKO_FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          # Port 2222: jaringan Biznet memblokir port 22 dari GitHub (5 Okt 2026). Bisa diganti lewat secret SERVER_PORT.
-          port: ${{ secrets.SERVER_PORT || '2222' }}
-          # Batas waktu menyambung SSH (bawaan 30 dtk terlalu ketat kalau server sedang sibuk).
-          timeout: 120s
-          command_timeout: 25m
-          envs: TOKO_BRANCH,TOKO_REPO,TOKO_GH_TOKEN,TOKO_TARGET,TOKO_DB_NAME,TOKO_APP_ENV_VAL,TOKO_APP_DEBUG_VAL,TOKO_APP_URL_VAL,TOKO_DB_PASSWORD,TOKO_ADMIN_EMAIL,TOKO_ADMIN_PASSWORD,TOKO_GOOGLE_CLIENT_ID,TOKO_GOOGLE_CLIENT_SECRET,TOKO_LINE_CHANNEL_ID,TOKO_LINE_CHANNEL_SECRET,TOKO_MAIL_HOST,TOKO_MAIL_PORT,TOKO_MAIL_USERNAME,TOKO_MAIL_PASSWORD,TOKO_MAIL_FROM_ADDRESS,TOKO_ALAMAT_RETUR,TOKO_PAYPAL_CLIENT_ID,TOKO_PAYPAL_CLIENT_SECRET,TOKO_PAYPAL_WEBHOOK_ID,TOKO_XENDIT_SECRET_KEY,TOKO_XENDIT_CALLBACK_TOKEN,TOKO_FIREBASE_CREDENTIALS
-          script: |
-            if [ ! -f /var/www/.provisioned ]; then
-              echo "::warning::Server belum di-provision. Deploy dilewati."
-              exit 0
-            fi
-
-            LOG="/tmp/deploy-${TOKO_BRANCH}.log"
-            : > "$LOG"
-
-            deploy () {
-              set -euo pipefail
-
-              echo "==> Deploy $TOKO_BRANCH -> $TOKO_TARGET"
-              AUTH_URL="https://x-access-token:${TOKO_GH_TOKEN}@github.com/${TOKO_REPO}.git"
-              PLAIN_URL="https://github.com/${TOKO_REPO}.git"
-
-              cd "$TOKO_TARGET"
-              if [ ! -d .git ]; then
-                git init -q
-                git remote add origin "$PLAIN_URL"
-              fi
-              git fetch -q --depth 1 "$AUTH_URL" "$TOKO_BRANCH"
-              git checkout -q -B "$TOKO_BRANCH" FETCH_HEAD
-              git reset -q --hard FETCH_HEAD
-              git log -1 --oneline
-
-              if [ ! -f artisan ]; then
-                echo "Belum ada aplikasi Laravel, langkah Laravel dilewati."
-                return 0
-              fi
-
-              echo "==> Permission storage & cache"
-              mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-              sudo -n chown -R "$(whoami)":www-data storage bootstrap/cache
-              sudo -n chmod -R ug+rwX storage bootstrap/cache
-
-              echo "==> .env"
-              if [ ! -f .env ]; then
-                cp .env.example .env
-              fi
-              set_env () {
-                local key="$1" val="$2" esc
-                esc=$(printf '%s' "$val" | sed -e 's/[\/&|]/\\&/g')
-                if grep -qE "^#?\s*${key}=" .env; then
-                  sed -i -E "s|^#?\s*${key}=.*|${key}=${esc}|" .env
-                else
-                  printf '%s=%s\n' "$key" "$val" >> .env
-                fi
-              }
-              set_env APP_ENV "$TOKO_APP_ENV_VAL"
-              set_env APP_DEBUG "$TOKO_APP_DEBUG_VAL"
-              set_env APP_URL "$TOKO_APP_URL_VAL"
-              set_env DB_CONNECTION mysql
-              set_env DB_HOST 127.0.0.1
-              set_env DB_PORT 3306
-              set_env DB_DATABASE "$TOKO_DB_NAME"
-              set_env DB_USERNAME toko_app
-              set_env DB_PASSWORD "$TOKO_DB_PASSWORD"
-              # Kredensial admin tidak disimpan di .env server, hanya dipakai seeder.
-              set_env ADMIN_EMAIL ""
-              set_env ADMIN_PASSWORD ""
-              # Login sosial (opsional): tombol Google/LINE muncul kalau secret-nya diisi.
-              set_env GOOGLE_CLIENT_ID "${TOKO_GOOGLE_CLIENT_ID:-}"
-              set_env GOOGLE_CLIENT_SECRET "${TOKO_GOOGLE_CLIENT_SECRET:-}"
-              set_env LINE_CHANNEL_ID "${TOKO_LINE_CHANNEL_ID:-}"
-              set_env LINE_CHANNEL_SECRET "${TOKO_LINE_CHANNEL_SECRET:-}"
-              # Nama aplikasi (pengirim email, dll.) = nama toko di toko/profil.php.
-              NAMA_TOKO="$(php -r '$p = is_file("toko/profil.php") ? require "toko/profil.php" : []; echo str_replace("\"", "", $p["nama"] ?? "Toko");')"
-              set_env APP_NAME "\"${NAMA_TOKO}\""
-              set_env QUEUE_CONNECTION database
-              # Email: SMTP kalau secret MAIL_HOST diisi; kalau belum, email hanya dicatat di log.
-              if [ -n "${TOKO_MAIL_HOST:-}" ]; then
-                set_env MAIL_MAILER smtp
-                set_env MAIL_HOST "$TOKO_MAIL_HOST"
-                set_env MAIL_PORT "${TOKO_MAIL_PORT:-587}"
-                set_env MAIL_USERNAME "${TOKO_MAIL_USERNAME:-}"
-                set_env MAIL_PASSWORD "${TOKO_MAIL_PASSWORD:-}"
-                set_env MAIL_SCHEME "$([ "${TOKO_MAIL_PORT:-587}" = "465" ] && echo smtps || echo smtp)"
-                set_env MAIL_FROM_ADDRESS "${TOKO_MAIL_FROM_ADDRESS:-${TOKO_MAIL_USERNAME:-}}"
-              else
-                set_env MAIL_MAILER log
-              fi
-              set_env TOKO_ALAMAT_RETUR "\"${TOKO_ALAMAT_RETUR:-}\""
-              # Pembayaran: dev/demo selalu sandbox / kunci test.
-              set_env PAYPAL_MODE sandbox
-              set_env PAYPAL_CLIENT_ID "${TOKO_PAYPAL_CLIENT_ID:-}"
-              set_env PAYPAL_CLIENT_SECRET "${TOKO_PAYPAL_CLIENT_SECRET:-}"
-              set_env PAYPAL_WEBHOOK_ID "${TOKO_PAYPAL_WEBHOOK_ID:-}"
-              set_env XENDIT_SECRET_KEY "${TOKO_XENDIT_SECRET_KEY:-}"
-              set_env XENDIT_CALLBACK_TOKEN "${TOKO_XENDIT_CALLBACK_TOKEN:-}"
-              # Notifikasi push aplikasi admin: JSON service account Firebase, di-base64 satu baris.
-              # Boleh diisi JSON mentah atau base64 (dengan/tanpa ganti baris) -> disimpan sebagai base64 satu baris.
-              if [ -n "${TOKO_FIREBASE_CREDENTIALS:-}" ]; then
-                case "$(printf '%s' "$TOKO_FIREBASE_CREDENTIALS" | tr -d ' \n\r' | cut -c1)" in
-                  '{') TOKO_FIREBASE_CREDENTIALS="$(printf '%s' "$TOKO_FIREBASE_CREDENTIALS" | base64 -w0)" ;;
-                  *)   TOKO_FIREBASE_CREDENTIALS="$(printf '%s' "$TOKO_FIREBASE_CREDENTIALS" | tr -d ' \n\r')" ;;
-                esac
-              fi
-              set_env FIREBASE_CREDENTIALS "${TOKO_FIREBASE_CREDENTIALS:-}"
-              sudo -n chown "$(whoami)":www-data .env
-              chmod 640 .env
-
-              echo "==> Composer install"
-              rm -f bootstrap/cache/config.php bootstrap/cache/routes-*.php
-              if [ "$TOKO_APP_ENV_VAL" = "demo" ]; then
-                composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
-              else
-                composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
-              fi
-
-              if ! grep -qE '^APP_KEY=.+' .env; then
-                php artisan key:generate --force
-              fi
-
-              echo "==> Migrate & seed"
-              php artisan config:clear
-              php artisan migrate --force
-              ADMIN_EMAIL="${TOKO_ADMIN_EMAIL:-admin@toko.test}" ADMIN_PASSWORD="${TOKO_ADMIN_PASSWORD:-}" \
-                php artisan db:seed --force
-
-              echo "==> Cache"
-              php artisan storage:link 2>/dev/null || true
-              php artisan optimize
-              php artisan filament:optimize 2>/dev/null || true
-
-              sudo -n chown -R "$(whoami)":www-data storage bootstrap/cache
-              sudo -n chmod -R ug+rwX storage bootstrap/cache
-              sudo -n systemctl reload "php$(cat /etc/toko-php-version)-fpm" || true
-              echo "==> Cron scheduler (order kadaluarsa, dll.)"
-              CRON_LINE="* * * * * cd ${TOKO_TARGET} && php artisan schedule:run >> /dev/null 2>&1"
-              CRON_ADA="$(crontab -l 2>/dev/null || true)"
-              CRON_LAIN="$(printf '%s\n' "$CRON_ADA" | grep -vF "cd ${TOKO_TARGET} && php artisan schedule:run" || true)"
-              printf '%s\n%s\n' "$CRON_LAIN" "$CRON_LINE" | sed '/^$/d' | crontab -
-              crontab -l | grep -F "${TOKO_TARGET}"
-
-              echo "==> Cek situs dari server"
-              HOSTNYA="$(echo "$TOKO_APP_URL_VAL" | sed -E 's#^https?://([^/:]+).*#\1#')"
-              CEK="$(curl -sS -o /dev/null --max-time 20 --resolve "${HOSTNYA}:443:127.0.0.1" \
-                     -w '%{http_code} %{redirect_url}' "$TOKO_APP_URL_VAL/" 2>&1 || true)"
-              echo "::notice title=Cek ${TOKO_APP_URL_VAL}::${CEK}"
-
-              # Cek kunci Xendit tanpa menampilkan isinya.
-              # 401 = kunci salah; 200/403 = kunci dikenali Xendit.
-              if [ -n "${TOKO_XENDIT_SECRET_KEY:-}" ]; then
-                case "$TOKO_XENDIT_SECRET_KEY" in
-                  xnd_development_*) JENIS="test" ;;
-                  xnd_production_*)  JENIS="LIVE (ditolak di dev/demo)" ;;
-                  *)                 JENIS="format tidak dikenal" ;;
-                esac
-                KODE="$(curl -s -o /dev/null --max-time 20 -u "${TOKO_XENDIT_SECRET_KEY}:" -w '%{http_code}' https://api.xendit.co/balance || true)"
-                TOKEN="kosong"; [ -n "${TOKO_XENDIT_CALLBACK_TOKEN:-}" ] && TOKEN="terisi"
-                echo "::notice title=Xendit::key ${JENIS}, respons API ${KODE} (401=kunci salah), callback token ${TOKEN}"
-              else
-                echo "::notice title=Xendit::XENDIT_SECRET_KEY belum terbaca"
-              fi
-              if [ -n "${TOKO_FIREBASE_CREDENTIALS:-}" ]; then
-                FB="$(printf '%s' "$TOKO_FIREBASE_CREDENTIALS" | base64 -d 2>/dev/null | grep -o '"project_id": *"[^"]*"' | head -1 || true)"
-                echo "::notice title=Firebase::${FB:-isi FIREBASE_CREDENTIALS bukan base64 JSON service account yang valid}"
-              else
-                echo "::notice title=Firebase::FIREBASE_CREDENTIALS belum diisi (push ke HP belum aktif, kotak masuk aplikasi tetap jalan)"
-              fi
-
-              echo "==> Deploy selesai: $TOKO_APP_URL_VAL"
-            }
-
-            set -o pipefail
-            ( deploy ) 2>&1 | tee "$LOG"
-            status=${PIPESTATUS[0]}
-            if [ "$status" -ne 0 ]; then
-              msg=$(tail -n 40 "$LOG" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
-              echo "::error title=Deploy gagal (40 baris terakhir)::${msg}"
-              exit "$status"
-            fi
+          URL: ${{ steps.target.outputs.url }}
+        run: |
+          baris=""
+          for i in $(seq 1 48); do
+            isi="$(curl -fsS --max-time 10 "${URL}/deploy-status.txt?t=$(date +%s)" 2>/dev/null || true)"
+            baris="$(printf '%s\n' "$isi" | head -1)"
+            case "$baris" in "${GITHUB_SHA} "*) break ;; esac
+            sleep 15
+          done
+          case "$baris" in
+            "${GITHUB_SHA} berhasil"*)
+              situs="$(printf '%s\n' "$isi" | grep -m1 '^Situs:' || true)"
+              echo "::notice title=Deploy ${URL}::Terpasang di server. ${situs}" ;;
+            "${GITHUB_SHA} "*)
+              msg=$(printf '%s\n' "$isi" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
+              echo "::error title=Deploy gagal di server::${msg}"
+              exit 1 ;;
+            *)
+              echo "::warning title=Deploy::Server belum melaporkan commit ini dalam 12 menit (atau ${URL} tidak bisa dibuka dari GitHub). Cek ${URL}/deploy-status.txt" ;;
+          esac
