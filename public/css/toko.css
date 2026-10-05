@@ -28,6 +28,7 @@
     --sage: #dde5d6;
     --line: #c9d1c4;
     --brick: #a5452f;
+    --ok: var(--kangkung); /* teks stok tersedia & pesan berhasil */
 
     --font: 'Bricolage', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
     --wrap: 76rem;
@@ -329,7 +330,7 @@ select { padding-right: 2rem; appearance: none;
 .chip input:focus-visible + span { outline: 2px solid var(--kangkung); outline-offset: 3px; }
 .chip.kosong-stok span { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--brick); }
 
-.stok { min-height: 1.55em; margin: 0 0 1rem; font-weight: 600; color: var(--kangkung); }
+.stok { min-height: 1.55em; margin: 0 0 1rem; font-weight: 600; color: var(--ok); }
 .stok.habis { color: var(--brick); }
 
 .catatan { font-size: .9375rem; color: var(--ink-soft); margin: .75rem 0 2rem; }
@@ -369,7 +370,7 @@ select { padding-right: 2rem; appearance: none;
 
 .pesan { margin: 1rem 0 0; padding: .8rem 1rem; border-left: 3px solid var(--kangkung); background: var(--sage); }
 .pesan-galat { border-color: var(--brick); background: #f3e3dd; }
-.berhasil { color: var(--kangkung); }
+.berhasil { color: var(--ok); }
 
 /* ---------- Form ---------- */
 
