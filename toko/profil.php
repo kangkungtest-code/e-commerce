@@ -2,37 +2,44 @@
 
 /*
 |--------------------------------------------------------------------------
-| Profil toko
+| Profil toko — Fast & Flux (branch toko-fastandflux)
 |--------------------------------------------------------------------------
-| Semua yang membedakan satu toko dengan toko lain yang memakai kode yang
-| sama ada di folder toko/ (dan public/toko/ untuk logo). Branch toko lain
-| (mis. toko-fastandflux) hanya mengubah folder ini, jadi update dari
-| claude-dev bisa di-merge tanpa bentrok.
-|
-| ATURAN: di branch claude-dev, file di folder toko/ jangan diubah lagi
-| kecuali menambah kunci baru yang punya nilai bawaan di config/toko.php.
+| Branch ini = kode claude-dev + folder toko/ & public/toko/ saja.
+| Ambil update: git merge claude-dev (folder ini tidak disentuh claude-dev).
 */
 
 return [
-    // Nama toko di header, judul halaman, email, invoice Xendit, dll.
-    'nama' => 'Kangkung Apparel',
+    'nama' => 'Fast & Flux',
 
-    // Awalan nomor pesanan, mis. KA-20261005-0001.
-    'prefix_order' => 'KA',
+    'prefix_order' => 'FF',
 
-    // Logo di header & panel admin (path di dalam public/). null = tulisan nama toko saja.
-    'logo' => null,
+    'logo' => 'toko/logo.png',
 
-    // Warna storefront (variabel CSS di public/css/toko.css). Kosong = warna bawaan.
-    'tema' => [],
+    // Hitam-merah sesuai logo.
+    'tema' => [
+        '--ink' => '#141414',
+        '--ink-soft' => '#555555',
+        '--paper' => '#f7f6f4',
+        '--kangkung' => '#c8102e',
+        '--kangkung-dark' => '#9a0c23',
+        '--sage' => '#f6e3e5',
+        '--line' => '#d8d4d0',
+    ],
 
-    // Warna utama panel admin (hex). null = amber bawaan Filament.
-    'warna_admin' => null,
+    'warna_admin' => '#c8102e',
 
-    // Teks besar di beranda per bahasa. null = teks bawaan.
-    'beranda' => null,
+    'beranda' => [
+        'judul' => [
+            'en' => 'Loud prints. Light fabric. Made for the heat.',
+            'id' => 'Motif berani, bahan ringan, siap untuk cuaca panas.',
+            'zh_TW' => '大膽印花，輕盈布料，為炎夏而生。',
+        ],
+        'teks' => [
+            'en' => 'Hawaiian shirts and graphic tees by Fast & Flux. Ships from Indonesia to Indonesia and Taiwan.',
+            'id' => 'Kemeja Hawaii dan kaos grafis dari Fast & Flux. Dikirim dari Indonesia ke seluruh Indonesia dan Taiwan.',
+            'zh_TW' => 'Fast & Flux 的夏威夷襯衫與圖案T恤。自印尼出貨，寄送印尼與台灣。',
+        ],
+    ],
 
-    // Data katalog awal (relatif ke folder toko/), null = katalog contoh bawaan
-    // database/data/katalog-demo.php dengan foto siluet.
-    'katalog' => null,
+    'katalog' => 'katalog.php',
 ];
