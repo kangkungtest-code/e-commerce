@@ -65,7 +65,16 @@ for BARIS in "${TARGET[@]}"; do
   # Commit yang sudah pernah gagal tidak dicoba lagi tiap menit (tunggu commit berikutnya).
   [ "$(cat "$DIR/.tarik-gagal" 2>/dev/null)" = "$REMOTE" ] && continue
 
-  CI="$(status_ci "$REPO" "$REMOTE")"
+  # Penanda lulus tes (branch lulus-tes/<branch>, dipasang job `test` di repo itu) dibaca lewat
+  # git ls-remote, tanpa kuota API GitHub (60 permintaan/jam per IP tanpa token). Repo yang
+  # belum memasang penanda memakai API check-runs seperti sebelumnya.
+  LULUS="$(git ls-remote "https://github.com/${REPO}.git" "refs/heads/lulus-tes/${BRANCH}" 2>/dev/null | cut -f1)"
+  if [ -n "$LULUS" ]; then
+    [ "$LULUS" = "$REMOTE" ] || continue   # commit terbaru belum lulus (masih jalan / gagal)
+    CI=success
+  else
+    CI="$(status_ci "$REPO" "$REMOTE")"
+  fi
   case "$CI" in
     success) ;;
     pending|none|"") continue ;;   # tes belum selesai / belum mulai
