@@ -26,6 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile(\App\Filament\Pages\ProfilSaya::class, isSimple: false)
             ->authGuard('admin')
             ->brandName(config('toko.nama').' Admin')
             // Logo toko (kalau ada) di samping nama, bukan menggantikan nama.

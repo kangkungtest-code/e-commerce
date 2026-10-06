@@ -26,7 +26,8 @@ class KebijakanTest extends TestCase
         $_ENV['ADMIN_PASSWORD'] = $_SERVER['ADMIN_PASSWORD'] = 'rahasia-123';
         $this->seed(DatabaseSeeder::class);
         Filament::setCurrentPanel('admin');
-        $this->admin = User::where('email', 'owner@toko.test')->firstOrFail();
+        $this->admin = User::factory()->create(['email' => 'pemilik-toko@toko.test']);
+        $this->admin->assignRole('Owner');
     }
 
     public function test_seeder_membuat_empat_halaman_dengan_nilai_dari_config(): void

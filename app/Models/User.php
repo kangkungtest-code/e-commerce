@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Seeders\RoleAndPermissionSeeder;
+
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -38,6 +40,7 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
         return [
             'email_verified_at' => 'datetime',
             'dihapus_pada' => 'datetime',
+            'nonaktif_pada' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -89,9 +92,28 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
     }
 
     /** Staff = punya role di guard admin (dipakai panel web & API aplikasi admin). */
+    /**
+     * Boleh masuk panel / aplikasi admin: punya peran admin, tidak dinonaktifkan, dan
+     * (untuk staf) fitur "Akun staf & peran" sedang menyala.
+     */
     public function adalahAdmin(): bool
     {
-        return $this->roles()->where('guard_name', 'admin')->exists();
+        if ($this->nonaktif_pada) {
+            return false;
+        }
+
+        $peran = $this->roles()->where('guard_name', 'admin')->pluck('name');
+        if ($peran->isEmpty()) {
+            return false;
+        }
+
+        return $peran->intersect([RoleAndPermissionSeeder::OWNER, RoleAndPermissionSeeder::SUPER_ADMIN])->isNotEmpty()
+            || \App\Support\Fitur::aktif('staf');
+    }
+
+    public function adalahSuperAdmin(): bool
+    {
+        return $this->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN, 'admin');
     }
 
     /** Token FCM untuk channel notifikasi push. */

@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
  */
 class BuatSuperAdmin extends Command
 {
-    protected $signature = 'toko:super-admin {email : Email akun Super Admin} {--cabut : Cabut peran Super Admin dari akun ini (akunnya tidak dihapus)}';
+    protected $signature = 'toko:super-admin {email : Email akun Super Admin} {--cabut : Cabut peran Super Admin dari akun ini (akunnya tidak dihapus)} {--murni : Lepas peran lain (mis. Owner) sehingga akun ini HANYA Super Admin}';
 
     protected $description = 'Buat atau perbarui akun Super Admin (pengatur fitur & paket)';
 
@@ -64,9 +64,12 @@ class BuatSuperAdmin extends Command
             $this->info("Password {$email} diperbarui.");
         }
 
-        if (! $user->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN)) {
+        if ($this->option('murni')) {
+            $user->syncRoles([RoleAndPermissionSeeder::SUPER_ADMIN]);
+        } elseif (! $user->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN)) {
             $user->assignRole(RoleAndPermissionSeeder::SUPER_ADMIN);
         }
+        $user->forceFill(['nonaktif_pada' => null])->save();
         $this->info("{$email} sekarang Super Admin.");
 
         return self::SUCCESS;

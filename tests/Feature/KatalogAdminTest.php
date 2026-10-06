@@ -42,7 +42,9 @@ class KatalogAdminTest extends TestCase
         Storage::fake('public');
         Filament::setCurrentPanel('admin');
 
-        $this->admin = User::where('email', 'owner@toko.test')->firstOrFail();
+        // ADMIN_EMAIL = Super Admin (tanpa akses data toko); tes ini memakai akun Owner.
+        $this->admin = User::factory()->create(['email' => 'pemilik-toko@toko.test']);
+        $this->admin->assignRole('Owner');
         $this->actingAs($this->admin, 'admin');
     }
 

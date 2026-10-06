@@ -28,8 +28,11 @@ class FondasiTest extends TestCase
 
         $admin = User::where('email', 'owner@toko.test')->firstOrFail();
 
-        $this->assertTrue($admin->hasRole('Owner'));
-        $this->assertTrue($admin->hasPermissionTo('order.ubah_status'));
+        // ADMIN_EMAIL = Super Admin: hanya mengatur platform, tidak memegang data toko.
+        $this->assertTrue($admin->hasRole('Super Admin'));
+        $this->assertFalse($admin->hasRole('Owner'));
+        $this->assertTrue($admin->hasPermissionTo('fitur.kelola'));
+        $this->assertFalse($admin->hasPermissionTo('order.ubah_status'));
         $this->assertSame(1, StockLocation::where('is_default', true)->count());
         $this->assertSame(1, User::count());
     }
@@ -56,7 +59,12 @@ class FondasiTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $admin = User::where('email', 'owner@toko.test')->firstOrFail();
 
-        $this->actingAs($admin, 'admin')->get('/admin')->assertOk();
+        // Super Admin diarahkan ke Fitur & paket; Owner melihat dashboard.
+        $this->actingAs($admin, 'admin')->get('/admin')->assertRedirect(\App\Filament\Pages\FiturPaket::getUrl());
+        $owner = User::factory()->create();
+        $owner->assignRole('Owner');
+        $this->flushSession();
+        $this->actingAs($owner, 'admin')->get('/admin')->assertOk();
         $this->assertGuest('web');
     }
 

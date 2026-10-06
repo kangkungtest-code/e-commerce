@@ -1,12 +1,11 @@
 name: Super Admin
 
-# Sekali jalan: jadikan akun Super Admin (pengatur fitur & paket) di kangkungdev.
-# Email: secret SUPERADMIN_EMAIL, kalau kosong pakai ADMIN_EMAIL (akun admin yang sudah ada).
-# Password: secret SUPERADMIN_PASSWORD, kalau kosong pakai ADMIN_PASSWORD (akun baru dibuat / password akun lama diganti).
+# Sekali jalan: akun Super Admin (pemilik platform) di kangkungdev dari secret
+# ADMIN_EMAIL & ADMIN_PASSWORD. Akun ini HANYA Super Admin (peran lain dilepas);
+# akun Owner toko dibuat Super Admin lewat panel (Pengaturan → Akun Owner).
+# Password dipakai untuk akun baru / mengganti password akun yang sudah ada.
 # Jalan otomatis kalau file ini berubah di claude-dev. Ubah SUPER_REV untuk mengulang.
-# SUPER_REV: 2
-# Kalau SUPERADMIN_EMAIL diisi & beda dengan ADMIN_EMAIL: peran Super Admin dicabut dari akun
-# ADMIN_EMAIL (akun itu tetap Owner), supaya akun toko dan akun platform terpisah.
+# SUPER_REV: 3
 
 on:
   push:
@@ -23,9 +22,8 @@ jobs:
       - name: Buat / perbarui Super Admin lewat SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          TOKO_SA_EMAIL: ${{ secrets.SUPERADMIN_EMAIL || secrets.ADMIN_EMAIL || 'admin@toko.test' }}
-          TOKO_SA_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD || secrets.ADMIN_PASSWORD }}
-          TOKO_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          TOKO_SA_EMAIL: ${{ secrets.ADMIN_EMAIL || 'admin@toko.test' }}
+          TOKO_SA_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -33,19 +31,16 @@ jobs:
           port: ${{ secrets.SERVER_PORT || '22' }}
           timeout: 60s
           command_timeout: 15m
-          envs: TOKO_SA_EMAIL,TOKO_SA_PASSWORD,TOKO_ADMIN_EMAIL
+          envs: TOKO_SA_EMAIL,TOKO_SA_PASSWORD
           script: |
             cd /var/www/dev
-            # Tunggu deploy tarik memasang kode yang punya perintah ini (maks ±12 menit).
+            # Tunggu deploy tarik memasang kode yang punya opsi --murni (maks ±12 menit).
             for i in $(seq 1 48); do
-              php artisan list --raw 2>/dev/null | grep -q '^toko:super-admin' && break
+              php artisan help toko:super-admin 2>/dev/null | grep -q -- '--murni' && break
               sleep 15
             done
-            if SUPERADMIN_PASSWORD="$TOKO_SA_PASSWORD" php artisan toko:super-admin "$TOKO_SA_EMAIL" > /tmp/super-admin.log 2>&1; then
+            if SUPERADMIN_PASSWORD="$TOKO_SA_PASSWORD" php artisan toko:super-admin "$TOKO_SA_EMAIL" --murni > /tmp/super-admin.log 2>&1; then
               echo "::notice title=Super Admin::$(tail -n 1 /tmp/super-admin.log)"
-              if [ -n "$TOKO_ADMIN_EMAIL" ] && [ "$(echo "$TOKO_ADMIN_EMAIL" | tr A-Z a-z)" != "$(echo "$TOKO_SA_EMAIL" | tr A-Z a-z)" ]; then
-                echo "::notice title=Akun Owner::$(php artisan toko:super-admin "$TOKO_ADMIN_EMAIL" --cabut | tail -n 1)"
-              fi
             else
               echo "::error title=Super Admin gagal::$(tail -n 3 /tmp/super-admin.log | tr '\n' ' ')"
               exit 1

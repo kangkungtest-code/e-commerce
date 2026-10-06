@@ -6,10 +6,10 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * Akun admin awal (role Owner).
+ * Akun Super Admin awal (pemilik platform). Akun Owner toko dibuat Super Admin lewat panel.
  *
  * Kredensial diambil dari environment variable ADMIN_EMAIL & ADMIN_PASSWORD
- * (di server: dari GitHub secret lewat deploy.yml, tidak disimpan di .env).
+ * (di server: dari GitHub secret lewat workflow super-admin.yml, tidak disimpan di .env).
  * Hanya dibuat kalau belum ada — password akun yang sudah ada tidak ditimpa.
  */
 class AdminUserSeeder extends Seeder
@@ -23,13 +23,13 @@ class AdminUserSeeder extends Seeder
 
         if (! $user) {
             if (! $password) {
-                $this->command?->warn("ADMIN_PASSWORD belum diset, akun admin {$email} tidak dibuat.");
+                $this->command?->warn("ADMIN_PASSWORD belum diset, akun Super Admin {$email} tidak dibuat.");
 
                 return;
             }
 
             $user = User::create([
-                'nama_lengkap' => 'Owner',
+                'nama_lengkap' => 'Super Admin',
                 'email' => $email,
                 'password' => $password,
                 'bahasa_preferensi' => 'id',
@@ -40,8 +40,9 @@ class AdminUserSeeder extends Seeder
             $this->command?->info("Akun admin {$email} dibuat.");
         }
 
-        if (! $user->hasRole('Owner')) {
-            $user->assignRole('Owner');
+        // ADMIN_EMAIL = akun Super Admin (pemilik platform). Akun Owner toko dibuat Super Admin di panel.
+        if (! $user->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN)) {
+            $user->assignRole(RoleAndPermissionSeeder::SUPER_ADMIN);
         }
     }
 }

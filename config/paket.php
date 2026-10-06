@@ -26,7 +26,7 @@ return [
         'kirim_luar_negeri' => ['Kirim ke luar negeri', 'Zona ongkir untuk negara selain Indonesia.', true],
         'aplikasi_mobile' => ['Aplikasi admin mobile', 'API aplikasi admin & notifikasi push ke HP.', true],
         'laporan_lengkap' => ['Laporan lengkap', 'Ekspor laporan penjualan (Excel/CSV).', false],
-        'staf' => ['Akun staf & peran', 'Owner bisa menambah karyawan dengan akses terbatas.', false],
+        'staf' => ['Akun staf & peran', 'Owner bisa menambah karyawan dengan akses terbatas.', true],
     ],
 
     // nomor => daftar fitur. Nama paket diatur di panel (bawaan "Paket 1/2/3").
