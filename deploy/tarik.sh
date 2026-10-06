@@ -13,7 +13,7 @@
 set -uo pipefail
 
 REPO="kangkungtest-code/e-commerce"
-SALINAN="/var/www/.toko-tarik.sh"
+SALINAN="$HOME/.toko-tarik.sh"
 
 exec 9>/tmp/toko-tarik.lock
 flock -n 9 || exit 0

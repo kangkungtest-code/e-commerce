@@ -3,7 +3,7 @@ name: Pasang deploy tarik
 # Sekali jalan: memasang/memperbarui cron deploy tarik di server (deploy/pasang-tarik.sh).
 # Setelah ini GitHub tidak perlu SSH ke server untuk deploy (server yang menarik update).
 # Jalan otomatis kalau file ini berubah di claude-dev. Ubah PASANG_REV untuk mengulang.
-# PASANG_REV: 1
+# PASANG_REV: 2
 
 on:
   push:
@@ -27,8 +27,11 @@ jobs:
           timeout: 60s
           command_timeout: 12m
           script: |
-            set -e
-            curl -fsSL --max-time 30 https://raw.githubusercontent.com/kangkungtest-code/e-commerce/claude-dev/deploy/pasang-tarik.sh | bash
+            if ! curl -fsSL --max-time 30 https://raw.githubusercontent.com/kangkungtest-code/e-commerce/claude-dev/deploy/pasang-tarik.sh | bash > /tmp/pasang-tarik.log 2>&1; then
+              msg=$(tail -n 30 /tmp/pasang-tarik.log | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+              echo "::error title=Pasang gagal::${msg}"
+              exit 1
+            fi
             echo "::notice title=Cron deploy tarik::$(crontab -l | grep -F toko-tarik)"
             for d in /var/www/dev /var/www/fastandflux /var/www/demo; do
               [ -f "$d/public/deploy-status.txt" ] && echo "::notice title=Status $d::$(head -1 "$d/public/deploy-status.txt")" || true

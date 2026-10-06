@@ -3,7 +3,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/kangkungtest-code/e-commerce/claude-dev/deploy/pasang-tarik.sh | bash
 set -euo pipefail
 
-SALINAN="/var/www/.toko-tarik.sh"
+SALINAN="$HOME/.toko-tarik.sh"
 curl -fsSL "https://raw.githubusercontent.com/kangkungtest-code/e-commerce/claude-dev/deploy/tarik.sh" -o "$SALINAN.baru"
 mv "$SALINAN.baru" "$SALINAN"
 chmod 755 "$SALINAN"
