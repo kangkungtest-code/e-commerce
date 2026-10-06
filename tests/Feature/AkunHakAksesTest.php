@@ -196,4 +196,42 @@ class AkunHakAksesTest extends TestCase
         $this->masuk($this->owner());
         $this->get('/admin/profile')->assertOk()->assertSee('Nama');
     }
+
+    public function test_super_admin_dengan_username_tanpa_email(): void
+    {
+        putenv('SUPERADMIN_PASSWORD=rahasia-super-123');
+        try {
+            $this->artisan('toko:super-admin', ['email' => 'Frendi', '--murni' => true])->assertSuccessful();
+        } finally {
+            putenv('SUPERADMIN_PASSWORD');
+        }
+        $this->artisan('toko:super-admin', ['email' => 'bukan valid!'])->assertFailed();
+
+        $u = User::where('username', 'frendi')->firstOrFail();
+        $this->assertTrue($u->adalahSuperAdmin());
+        $this->assertStringEndsWith('.invalid', $u->email);
+
+        // Login panel dengan username.
+        $this->flushSession();
+        Livewire::test(\App\Filament\Pages\Auth\Masuk::class)
+            ->fillForm(['email' => 'frendi', 'password' => 'rahasia-super-123'])
+            ->call('authenticate')
+            ->assertHasNoFormErrors();
+        $this->assertAuthenticatedAs($u, 'admin');
+
+        // Owner tetap login dengan email; password salah ditolak.
+        auth('admin')->logout();
+        $owner = User::factory()->create(['email' => 'owner2@toko.test', 'password' => 'rahasia-owner-9']);
+        $owner->assignRole(R::OWNER);
+        Livewire::test(\App\Filament\Pages\Auth\Masuk::class)
+            ->fillForm(['email' => 'Owner2@toko.test', 'password' => 'rahasia-owner-9'])
+            ->call('authenticate')
+            ->assertHasNoFormErrors();
+        $this->assertAuthenticatedAs($owner, 'admin');
+        auth('admin')->logout();
+        Livewire::test(\App\Filament\Pages\Auth\Masuk::class)
+            ->fillForm(['email' => 'frendi', 'password' => 'salah-salah'])
+            ->call('authenticate')
+            ->assertHasFormErrors(['email']);
+    }
 }

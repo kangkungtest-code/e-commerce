@@ -1,11 +1,13 @@
 name: Super Admin
 
 # Sekali jalan: akun Super Admin (pemilik platform) di kangkungdev dari secret
-# ADMIN_EMAIL & ADMIN_PASSWORD. Akun ini HANYA Super Admin (peran lain dilepas);
+# ADMIN_USERNAME (login tanpa email) atau ADMIN_EMAIL, dan ADMIN_PASSWORD.
+# Kalau ADMIN_USERNAME diisi, akun lama ADMIN_EMAIL dicabut peran Super Admin-nya.
+# Akun ini HANYA Super Admin (peran lain dilepas);
 # akun Owner toko dibuat Super Admin lewat panel (Pengaturan → Akun Owner).
 # Password dipakai untuk akun baru / mengganti password akun yang sudah ada.
 # Jalan otomatis kalau file ini berubah di claude-dev. Ubah SUPER_REV untuk mengulang.
-# SUPER_REV: 4
+# SUPER_REV: 5
 
 on:
   push:
@@ -22,7 +24,8 @@ jobs:
       - name: Buat / perbarui Super Admin lewat SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          TOKO_SA_EMAIL: ${{ secrets.ADMIN_EMAIL || 'admin@toko.test' }}
+          TOKO_SA_EMAIL: ${{ secrets.ADMIN_USERNAME || secrets.ADMIN_EMAIL || 'admin@toko.test' }}
+          TOKO_SA_LAMA: ${{ secrets.ADMIN_USERNAME != '' && secrets.ADMIN_EMAIL || '' }}
           TOKO_SA_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -31,7 +34,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT || '22' }}
           timeout: 60s
           command_timeout: 15m
-          envs: TOKO_SA_EMAIL,TOKO_SA_PASSWORD
+          envs: TOKO_SA_EMAIL,TOKO_SA_PASSWORD,TOKO_SA_LAMA
           script: |
             cd /var/www/dev
             # Tunggu deploy tarik selesai memasang commit ini (kode + migrasi), maks ±12 menit.
@@ -41,6 +44,9 @@ jobs:
             done
             if SUPERADMIN_PASSWORD="$TOKO_SA_PASSWORD" php artisan toko:super-admin "$TOKO_SA_EMAIL" --murni > /tmp/super-admin.log 2>&1; then
               echo "::notice title=Super Admin::$(tail -n 1 /tmp/super-admin.log)"
+              if [ -n "$TOKO_SA_LAMA" ]; then
+                echo "::notice title=Akun lama (email)::$(php artisan toko:super-admin "$TOKO_SA_LAMA" --cabut | tail -n 1)"
+              fi
             else
               echo "::error title=Super Admin gagal::$(tail -n 3 /tmp/super-admin.log | tr '\n' ' ')"
               exit 1

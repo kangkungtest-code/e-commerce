@@ -25,7 +25,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Masuk::class)
             ->profile(\App\Filament\Pages\ProfilSaya::class, isSimple: false)
             ->authGuard('admin')
             ->brandName(config('toko.nama').' Admin')
