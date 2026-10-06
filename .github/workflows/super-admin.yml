@@ -1,13 +1,14 @@
 name: Super Admin
 
-# Sekali jalan: akun Super Admin (pemilik platform) di kangkungdev dari secret
+# Sekali jalan: akun Super Admin (pemilik platform) di kangkungdev dan situs lain
+# (/var/www/travel) dari secret
 # ADMIN_USERNAME (login tanpa email) atau ADMIN_EMAIL, dan ADMIN_PASSWORD.
 # Kalau ADMIN_USERNAME diisi, akun lama ADMIN_EMAIL dicabut peran Super Admin-nya.
 # Akun ini HANYA Super Admin (peran lain dilepas);
 # akun Owner toko dibuat Super Admin lewat panel (Pengaturan → Akun Owner).
 # Password dipakai untuk akun baru / mengganti password akun yang sudah ada.
 # Jalan otomatis kalau file ini berubah di claude-dev. Ubah SUPER_REV untuk mengulang.
-# SUPER_REV: 5
+# SUPER_REV: 6
 
 on:
   push:
@@ -19,7 +20,7 @@ on:
 jobs:
   super-admin:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - name: Buat / perbarui Super Admin lewat SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -33,21 +34,38 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || '22' }}
           timeout: 60s
-          command_timeout: 15m
+          command_timeout: 40m
           envs: TOKO_SA_EMAIL,TOKO_SA_PASSWORD,TOKO_SA_LAMA
           script: |
-            cd /var/www/dev
-            # Tunggu deploy tarik selesai memasang commit ini (kode + migrasi), maks ±12 menit.
+            # Tunggu deploy tarik memasang commit ini di dev (kode + migrasi), maks ±12 menit.
             for i in $(seq 1 48); do
-              head -1 public/deploy-status.txt 2>/dev/null | grep -q "^${{ github.sha }} berhasil" && break
+              head -1 /var/www/dev/public/deploy-status.txt 2>/dev/null | grep -q "^${{ github.sha }} berhasil" && break
               sleep 15
             done
-            if SUPERADMIN_PASSWORD="$TOKO_SA_PASSWORD" php artisan toko:super-admin "$TOKO_SA_EMAIL" --murni > /tmp/super-admin.log 2>&1; then
-              echo "::notice title=Super Admin::$(tail -n 1 /tmp/super-admin.log)"
-              if [ -n "$TOKO_SA_LAMA" ]; then
-                echo "::notice title=Akun lama (email)::$(php artisan toko:super-admin "$TOKO_SA_LAMA" --cabut | tail -n 1)"
+            # Situs lain cukup sudah pernah terpasang dengan sukses (deploy pertama bisa ±15 menit
+            # setelah dev, karena tarik.sh baru tahu targetnya setelah dev ter-update).
+            GAGAL=0
+            for DIR in /var/www/dev /var/www/travel; do
+              if [ "$DIR" != /var/www/dev ]; then
+                for i in $(seq 1 100); do
+                  head -1 "$DIR/public/deploy-status.txt" 2>/dev/null | grep -q " berhasil " && break
+                  sleep 15
+                done
               fi
-            else
-              echo "::error title=Super Admin gagal::$(tail -n 3 /tmp/super-admin.log | tr '\n' ' ')"
-              exit 1
-            fi
+              if [ ! -f "$DIR/artisan" ]; then
+                echo "::error title=Super Admin $DIR::Situs belum terpasang ($(head -1 "$DIR/public/deploy-status.txt" 2>/dev/null))"
+                GAGAL=1; continue
+              fi
+              cd "$DIR"
+              if SUPERADMIN_PASSWORD="$TOKO_SA_PASSWORD" php artisan toko:super-admin "$TOKO_SA_EMAIL" --murni > /tmp/super-admin.log 2>&1; then
+                echo "::notice title=Super Admin $DIR::$(tail -n 1 /tmp/super-admin.log)"
+                if [ -n "$TOKO_SA_LAMA" ]; then
+                  echo "::notice title=Akun lama (email) $DIR::$(php artisan toko:super-admin "$TOKO_SA_LAMA" --cabut | tail -n 1)"
+                fi
+              else
+                echo "::error title=Super Admin gagal $DIR::$(tail -n 3 /tmp/super-admin.log | tr '\n' ' ')"
+                GAGAL=1
+              fi
+            done
+            echo "::notice title=RAM server::$(free -m | awk '/Mem:/ {print "terpakai " $3 " MB dari " $2 " MB, tersedia " $7 " MB"} /Swap:/ {print "; swap " $3 "/" $2 " MB"}' | tr '\n' ' ')"
+            exit $GAGAL

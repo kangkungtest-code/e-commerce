@@ -6,7 +6,7 @@ name: Provision server
 # Untuk menjalankan ulang: ubah baris PROVISION_REV di bawah lalu push.
 # Aman dijalankan ulang (idempotent).
 #
-# PROVISION_REV: 8
+# PROVISION_REV: 9
 #
 # Secrets yang dibutuhkan (Settings -> Secrets and variables -> Actions,
 # sebagai REPOSITORY secret):
@@ -21,6 +21,8 @@ name: Provision server
 #   dev   -> https://kangkungdev.duckdns.org/  (sama dengan dev, HTTPS Let's Encrypt)
 #   toko  -> https://fastandflux.duckdns.org/  root /var/www/fastandflux/public  database toko_fastandflux
 #            (branch toko-fastandflux)
+#   travel -> https://kangkungtravel.duckdns.org/  root /var/www/travel/public  database travel_dev
+#            (repo kangkungtest-code/travel, branch claude-dev; ditarik deploy/tarik.sh)
 
 on:
   push:
@@ -64,6 +66,7 @@ jobs:
           # Toko lain di server yang sama: "nama-situs domain folder database" per baris.
           TOKO_LAIN: |
             toko-fastandflux fastandflux.duckdns.org /var/www/fastandflux toko_fastandflux
+            travel-dev kangkungtravel.duckdns.org /var/www/travel travel_dev
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
