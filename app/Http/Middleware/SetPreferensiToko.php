@@ -24,7 +24,7 @@ class SetPreferensiToko
 
         $currency = $request->session()->get('currency', $user?->mata_uang_preferensi);
         if (! in_array($currency, config('toko.currencies'), true)) {
-            $currency = 'USD';
+            $currency = in_array('USD', config('toko.currencies'), true) ? 'USD' : config('toko.currencies')[0];
         }
 
         app()->setLocale($locale);

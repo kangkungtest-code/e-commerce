@@ -45,7 +45,7 @@ class ChatbotKontak extends Page
 
     public static function canAccess(): bool
     {
-        return (bool) Filament::auth()->user()?->hasPermissionTo('faq.kelola');
+        return \App\Support\Fitur::terlihatAdmin('chatbot') && (bool) Filament::auth()->user()?->hasPermissionTo('faq.kelola');
     }
 
     public function mount(): void

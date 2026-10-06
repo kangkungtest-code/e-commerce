@@ -24,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Password::defaults(fn () => Password::min(8));
 
+        // Fitur bersaklar yang bekerja lewat config (bahasa, mata uang, negara kirim).
+        \App\Support\Fitur::terapkanConfig();
+
         // Isi keranjang tamu pindah ke akun setelah pembeli masuk (email, daftar, atau login sosial).
         Event::listen(function (Login $event) {
             if ($event->guard === 'web') {

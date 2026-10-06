@@ -13,7 +13,7 @@ class FcmChannel
 
     public function send(object $notifiable, Notification $notification): void
     {
-        if (! $this->fcm->aktif() || ! method_exists($notification, 'toFcm')) {
+        if (! $this->fcm->aktif() || ! \App\Support\Fitur::aktif('aplikasi_mobile') || ! method_exists($notification, 'toFcm')) {
             return;
         }
 

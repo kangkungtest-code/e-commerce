@@ -136,6 +136,7 @@ class PengaturanPembayaran extends Page
                 Section::make('Metode yang ditawarkan ke pembeli')
                     ->description('Metode yang dimatikan tidak muncul di halaman bayar. Pesanan lama yang sudah memakai metode itu tetap diproses.')
                     ->schema(collect(AkunPembayaran::METODE)->map(fn ($label, $kode) => Toggle::make("aktif_{$kode}")
+                        ->visible(fn () => $kode !== Payment::GATEWAY_PAYPAL || \App\Support\Fitur::terlihatAdmin('paypal'))
                         ->label($label)
                         ->helperText(fn () => self::statusMetode($kode)))->values()->all()),
 
@@ -160,6 +161,7 @@ class PengaturanPembayaran extends Page
                     ]),
 
                 Section::make('PayPal — untuk pembeli luar negeri')
+                    ->visible(fn () => \App\Support\Fitur::terlihatAdmin('paypal'))
                     ->description('Tagihan PayPal dalam USD atau TWD (PayPal tidak menerima rupiah).')
                     ->collapsible()
                     ->collapsed(fn () => AkunPembayaran::sumber('paypal.client_id') === null)
@@ -196,18 +198,25 @@ class PengaturanPembayaran extends Page
     {
         $d = $this->form->getState();
 
+        // Isian yang disembunyikan (fitur mati) tidak ada di $d: biarkan nilai tersimpannya.
         foreach (array_keys(AkunPembayaran::METODE) as $kode) {
+            if (! array_key_exists("aktif_{$kode}", $d)) {
+                continue;
+            }
             Pengaturan::simpan("bayar.aktif.{$kode}", ($d["aktif_{$kode}"] ?? false) ? '1' : '0');
         }
         // '-' = sengaja tidak ada bank (nilai kosong berarti "pakai bawaan").
         Pengaturan::simpan('bayar.xendit.va_banks', implode(',', array_intersect(AkunPembayaran::BANK_VA, $d['va_banks'] ?? [])) ?: '-');
-        AkunPembayaran::simpan('paypal.mode', in_array($d['paypal_mode'] ?? null, ['sandbox', 'live'], true) ? $d['paypal_mode'] : 'sandbox');
+        array_key_exists('paypal_mode', $d) && AkunPembayaran::simpan('paypal.mode', in_array($d['paypal_mode'] ?? null, ['sandbox', 'live'], true) ? $d['paypal_mode'] : 'sandbox');
 
         foreach (AkunPembayaran::ISIAN as $kunci => [, $rahasia]) {
             if ($kunci === 'paypal.mode') {
                 continue;
             }
             $nama = self::nama($kunci);
+            if (! array_key_exists($nama, $d)) {
+                continue;
+            }
             if ($rahasia) {
                 // Kosong = tidak diubah, kecuali dicentang hapus.
                 if ($d["hapus_{$nama}"] ?? false) {

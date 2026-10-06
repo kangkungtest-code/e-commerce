@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::get('/ping', fn () => ['status' => 'ok', 'versi' => 'v1']);
 
-    Route::prefix('admin')->middleware(\App\Http\Middleware\BahasaAdminApi::class)->group(function () {
+    Route::prefix('admin')->middleware([\App\Http\Middleware\BahasaAdminApi::class, 'fitur:aplikasi_mobile'])->group(function () {
         Route::post('/masuk', [AuthController::class, 'masuk'])->middleware('throttle:10,1');
 
         Route::middleware(['auth:sanctum', 'admin.api', 'throttle:120,1'])->group(function () {
@@ -52,7 +52,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('/stok/{varian}', [StokController::class, 'ubah']);
             });
 
-            Route::middleware('izin:retur.kelola')->group(function () {
+            Route::middleware(['fitur:retur', 'izin:retur.kelola'])->group(function () {
                 Route::get('/retur', [ReturController::class, 'index']);
                 Route::get('/retur/{retur}', [ReturController::class, 'show']);
                 Route::post('/retur/{retur}/setujui', [ReturController::class, 'setujui']);

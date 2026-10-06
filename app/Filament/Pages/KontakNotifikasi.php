@@ -109,6 +109,7 @@ class KontakNotifikasi extends Page
                     ->columns(2)
                     ->schema($medsos),
                 Section::make('Email notifikasi untuk pemilik')
+                    ->visible(fn () => \App\Support\Fitur::terlihatAdmin('email_pemilik'))
                     ->description('Email rincian pesanan dikirim ke alamat di bawah. Butuh SMTP (secret MAIL_*) di server; sebelum itu email hanya tercatat di log server.')
                     ->columns(2)
                     ->schema([
@@ -152,9 +153,12 @@ class KontakNotifikasi extends Page
             Pengaturan::simpan("medsos.{$k}", trim((string) ($d["medsos_{$k}"] ?? '')) ?: null);
         }
         Pengaturan::simpan('retur.alamat', trim((string) ($d['alamat_retur'] ?? '')) ?: null);
-        Pengaturan::simpan('email_pemilik.alamat', implode(',', EmailPemilik::pecah($d['email_pemilik'] ?? null)) ?: null);
-        foreach (array_keys(EmailPemilik::JENIS) as $j) {
-            Pengaturan::simpan("email_pemilik.{$j}", in_array($j, $d['email_jenis'] ?? [], true) ? '1' : '0');
+        // Bagian email tersembunyi kalau fiturnya mati: jangan timpa isian yang tersimpan.
+        if (array_key_exists('email_pemilik', $d)) {
+            Pengaturan::simpan('email_pemilik.alamat', implode(',', EmailPemilik::pecah($d['email_pemilik'] ?? null)) ?: null);
+            foreach (array_keys(EmailPemilik::JENIS) as $j) {
+                Pengaturan::simpan("email_pemilik.{$j}", in_array($j, $d['email_jenis'] ?? [], true) ? '1' : '0');
+            }
         }
 
         $this->isiUlang();
@@ -165,6 +169,7 @@ class KontakNotifikasi extends Page
     {
         return [
             Action::make('ujiEmail')
+                ->visible(fn () => \App\Support\Fitur::aktif('email_pemilik'))
                 ->label('Kirim email uji')
                 ->icon(Heroicon::OutlinedEnvelope)
                 ->color('gray')

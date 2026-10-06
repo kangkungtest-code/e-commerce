@@ -24,8 +24,8 @@ Route::get('/faq', [KatalogController::class, 'faq'])->name('faq');
 Route::get('/sitemap.xml', \App\Http\Controllers\Toko\SitemapController::class)->name('sitemap');
 Route::get('/kebijakan/{halaman}', [KatalogController::class, 'kebijakan'])->name('kebijakan');
 
-Route::get('/chatbot', [ChatbotController::class, 'mulai'])->middleware('throttle:30,1')->name('chatbot');
-Route::post('/chatbot', [ChatbotController::class, 'tanya'])->middleware('throttle:30,1');
+Route::get('/chatbot', [ChatbotController::class, 'mulai'])->middleware(['fitur:chatbot', 'throttle:30,1'])->name('chatbot');
+Route::post('/chatbot', [ChatbotController::class, 'tanya'])->middleware(['fitur:chatbot', 'throttle:30,1']);
 
 Route::post('/preferensi', [PreferensiController::class, 'update'])->middleware('throttle:30,1')->name('preferensi');
 
@@ -75,13 +75,13 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/akun/pesanan', [PesananController::class, 'index'])->name('akun.pesanan');
     Route::get('/akun/pesanan/{order}', [PesananController::class, 'show'])->name('akun.pesanan.show');
     Route::post('/akun/pesanan/{order}/batal', [PesananController::class, 'batal'])->name('akun.pesanan.batal');
-    Route::post('/akun/pesanan/{order}/retur', [PesananController::class, 'ajukanRetur'])->middleware('throttle:5,1')->name('akun.pesanan.retur');
+    Route::post('/akun/pesanan/{order}/retur', [PesananController::class, 'ajukanRetur'])->middleware(['fitur:retur', 'throttle:5,1'])->name('akun.pesanan.retur');
     Route::post('/akun/pesanan/{order}/bayar', [PembayaranController::class, 'bayar'])->middleware(['terverifikasi', 'throttle:10,1'])->name('akun.pesanan.bayar');
     Route::post('/akun/pesanan/{order}/simulasi', [PembayaranController::class, 'simulasi'])->middleware('throttle:10,1')->name('akun.pesanan.simulasi');
     Route::get('/akun/pesanan/{order}/status', [PembayaranController::class, 'status'])->middleware('throttle:30,1')->name('akun.pesanan.status');
     Route::get('/bayar/paypal/{payment}/kembali', [PembayaranController::class, 'paypalKembali'])->name('bayar.paypal.kembali');
     Route::get('/bayar/paypal/{payment}/batal', [PembayaranController::class, 'paypalBatal'])->name('bayar.paypal.batal');
-    Route::put('/akun/retur/{retur}/resi', [PesananController::class, 'resiRetur'])->name('akun.retur.resi');
+    Route::put('/akun/retur/{retur}/resi', [PesananController::class, 'resiRetur'])->middleware('fitur:retur')->name('akun.retur.resi');
 
     Route::get('/checkout', [CheckoutController::class, 'show'])->middleware('terverifikasi')->name('checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware(['terverifikasi', 'throttle:10,1']);

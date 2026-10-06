@@ -27,11 +27,16 @@ class ShippingZone extends Model
     {
         return static::query()->where('is_active', true)->get()
             ->flatMap(fn (self $z) => $z->negara ?? [])
+            ->intersect(array_keys(config('toko.negara'))) // kirim_luar_negeri mati → hanya ID
             ->unique()->sort()->values()->all();
     }
 
     public static function untukNegara(string $negara): ?self
     {
+        if (! array_key_exists(strtoupper($negara), config('toko.negara'))) {
+            return null; // negara tidak dilayani (mis. kirim ke luar negeri dimatikan)
+        }
+
         return static::query()->where('is_active', true)->get()
             ->first(fn (self $z) => in_array(strtoupper($negara), $z->negara ?? [], true));
     }

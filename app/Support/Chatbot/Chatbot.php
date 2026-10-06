@@ -48,7 +48,8 @@ class Chatbot
         $topik = [];
         $nama = null;
         $kunciTerakhir = null;
-        $locales = array_keys(config('toko.locales'));
+        // File balasan boleh berisi semua bahasa walau multi-bahasa sedang dimatikan.
+        $locales = array_keys(\App\Support\Fitur::semuaBahasa());
 
         foreach (preg_split('/\R/u', $isi) as $no => $baris) {
             $nomor = $no + 1;

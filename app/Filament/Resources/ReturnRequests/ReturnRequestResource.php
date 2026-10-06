@@ -36,6 +36,11 @@ class ReturnRequestResource extends Resource
 
     protected static ?string $navigationLabel = 'Retur';
 
+    public static function canAccess(): bool
+    {
+        return \App\Support\Fitur::terlihatAdmin('retur') && parent::canAccess();
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $n = ReturnRequest::query()->where('status', ReturnRequest::STATUS_DIAJUKAN)->count();

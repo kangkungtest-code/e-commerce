@@ -27,16 +27,23 @@ class RoleAndPermissionSeeder extends Seeder
 
     public const GUARD = 'admin';
 
+    /** Peran pemilik platform (Frendi). Hanya peran ini yang boleh mengatur fitur & paket. */
+    public const SUPER_ADMIN = 'Super Admin';
+
+    /** Izin yang hanya dimiliki Super Admin, tidak pernah diberikan ke peran client. */
+    public const IZIN_SUPER = ['fitur.kelola'];
+
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        foreach (self::PERMISSIONS as $name) {
+        foreach ([...self::PERMISSIONS, ...self::IZIN_SUPER] as $name) {
             Permission::findOrCreate($name, self::GUARD);
         }
 
-        // MVP: satu role Owner dengan semua permission.
+        // Owner (client) = semua izin toko. Super Admin = semua izin + atur fitur & paket.
         Role::findOrCreate('Owner', self::GUARD)->syncPermissions(self::PERMISSIONS);
+        Role::findOrCreate(self::SUPER_ADMIN, self::GUARD)->syncPermissions([...self::PERMISSIONS, ...self::IZIN_SUPER]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

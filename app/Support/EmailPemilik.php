@@ -49,7 +49,7 @@ class EmailPemilik
     {
         try {
             $penerima = self::penerima();
-            if (! $penerima || ! self::aktif($jenis)) {
+            if (! $penerima || ! self::aktif($jenis) || ! Fitur::aktif('email_pemilik')) {
                 return;
             }
 

@@ -123,7 +123,7 @@ class TampilanOrder
             ])->all(),
             'pembayaran' => TampilanPembayaran::untuk($o),
             'progres' => self::progres($o),
-            'bisa_retur' => TampilanRetur::bisaDiajukan($o),
+            'bisa_retur' => \App\Support\Fitur::aktif('retur') && TampilanRetur::bisaDiajukan($o),
             'batas_retur_hari' => config('toko.retur.batas_hari'),
             'retur' => ($r = $o->returnRequests()->latest()->first()) ? [
                 'model' => $r,

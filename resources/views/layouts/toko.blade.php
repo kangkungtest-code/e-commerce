@@ -63,6 +63,7 @@
 
             <form class="prefs" method="post" action="{{ route('preferensi') }}" data-auto-submit>
                 @csrf
+                @if (count(config('toko.locales')) > 1)
                 <label>
                     <span class="sr-only">{{ __('Language') }}</span>
                     <select name="locale">
@@ -71,6 +72,8 @@
                         @endforeach
                     </select>
                 </label>
+                @endif
+                @if (count(config('toko.currencies')) > 1)
                 <label>
                     <span class="sr-only">{{ __('Currency') }}</span>
                     <select name="currency">
@@ -79,6 +82,7 @@
                         @endforeach
                     </select>
                 </label>
+                @endif
                 <noscript><button type="submit">{{ __('Apply') }}</button></noscript>
             </form>
         </div>
@@ -89,6 +93,7 @@
         @yield('isi')
     </main>
 
+    @if (\App\Support\Fitur::aktif('chatbot'))
     <div class="chat" data-chat data-url="{{ route('chatbot') }}" data-t-galat="{{ __('Sorry, something went wrong. Please try again.') }}">
         <button type="button" class="chat-buka" aria-expanded="false" aria-controls="chat-panel" data-chat-buka>{{ __('Ask us') }}</button>
         <section class="chat-panel" id="chat-panel" role="dialog" aria-modal="false" aria-label="{{ __('Ask us') }}" hidden>
@@ -106,6 +111,7 @@
             <p class="chat-catatan">{{ __('Automated answers. For anything else, chat with our team.') }}</p>
         </section>
     </div>
+    @endif
 
     @if (! $pembeli && ! request()->routeIs('login', 'daftar', 'password.*'))
         @include('toko.partials.dialog-masuk')

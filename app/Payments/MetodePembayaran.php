@@ -41,6 +41,7 @@ class MetodePembayaran
     public static function ditawarkan(string $kode): bool
     {
         return self::gateway($kode) !== null && \App\Support\AkunPembayaran::metodeNyala($kode)
+            && ($kode !== Payment::GATEWAY_PAYPAL || \App\Support\Fitur::aktif('paypal'))
             && ($kode !== Payment::GATEWAY_VA || \App\Support\AkunPembayaran::bankVa() !== []);
     }
 

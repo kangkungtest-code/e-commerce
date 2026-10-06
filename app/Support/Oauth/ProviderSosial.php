@@ -30,14 +30,20 @@ abstract class ProviderSosial
     /** @return array<string, ProviderSosial> */
     public static function aktif(): array
     {
-        return array_filter(self::semua(), fn (self $p) => $p->dikonfigurasi());
+        return array_filter(self::semua(), fn (self $p) => $p->bisaDipakai());
     }
 
     public static function cari(string $kode): ?self
     {
         $p = self::semua()[$kode] ?? null;
 
-        return $p && $p->dikonfigurasi() ? $p : null;
+        return $p && $p->bisaDipakai() ? $p : null;
+    }
+
+    /** Kunci sudah diisi DAN fitur login_<kode> dinyalakan Super Admin. */
+    public function bisaDipakai(): bool
+    {
+        return $this->dikonfigurasi() && \App\Support\Fitur::aktif('login_'.$this->kode());
     }
 
     public function dikonfigurasi(): bool

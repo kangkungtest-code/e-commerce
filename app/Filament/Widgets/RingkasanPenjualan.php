@@ -33,7 +33,7 @@ class RingkasanPenjualan extends StatsOverviewWidget
             Stat::make('Order terbayar', (string) $r['jumlah'])->description('Rata-rata '.LabelAdmin::rupiah($r['rata']).' per order'),
             Stat::make('Perlu diproses', (string) Order::where('status', Order::STATUS_DIBAYAR)->count())->description('Sudah dibayar, belum dikemas'),
             Stat::make('Menunggu bayar', (string) Order::where('status', Order::STATUS_MENUNGGU_PEMBAYARAN)->count())->description('Stok sedang ditahan'),
-            Stat::make('Retur baru', (string) ReturnRequest::where('status', ReturnRequest::STATUS_DIAJUKAN)->count())->description('Perlu ditinjau'),
+            ...(! \App\Support\Fitur::aktif('retur') ? [] : [Stat::make('Retur baru', (string) ReturnRequest::where('status', ReturnRequest::STATUS_DIAJUKAN)->count())->description('Perlu ditinjau')]),
             Stat::make('Stok menipis', (string) Stock::whereRaw('(jumlah - jumlah_reserved) <= 5')->count())->description('Varian dengan stok tersedia ≤ 5'),
         ];
     }
