@@ -41,9 +41,10 @@ class RoleAndPermissionSeeder extends Seeder
             Permission::findOrCreate($name, self::GUARD);
         }
 
-        // Owner (client) = semua izin toko. Super Admin = semua izin + atur fitur & paket.
+        // Owner (client) = semua izin toko.
         Role::findOrCreate('Owner', self::GUARD)->syncPermissions(self::PERMISSIONS);
-        Role::findOrCreate(self::SUPER_ADMIN, self::GUARD)->syncPermissions([...self::PERMISSIONS, ...self::IZIN_SUPER]);
+        // Super Admin sengaja TIDAK punya izin toko (produk, pesanan, laporan, dll.): hanya mengatur platform.
+        Role::findOrCreate(self::SUPER_ADMIN, self::GUARD)->syncPermissions(self::IZIN_SUPER);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

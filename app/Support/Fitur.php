@@ -126,13 +126,12 @@ class Fitur
     }
 
     /**
-     * Menu admin fitur ini tampil? Fitur yang mati tetap terlihat oleh Super Admin
-     * (datanya tidak hilang, hanya disembunyikan dari client).
+     * Menu admin fitur ini tampil? Sama dengan aktif(): fitur yang mati hilang dari panel untuk
+     * semua orang (Super Admin pun tidak mengakses data toko). Datanya tetap ada di database.
      */
     public static function terlihatAdmin(string $kunci): bool
     {
-        return self::aktif($kunci)
-            || (bool) \Filament\Facades\Filament::auth()->user()?->hasPermissionTo('fitur.kelola');
+        return self::aktif($kunci);
     }
 
     /**

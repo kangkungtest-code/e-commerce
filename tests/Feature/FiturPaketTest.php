@@ -91,12 +91,10 @@ class FiturPaketTest extends TestCase
         // API aplikasi mobile.
         $this->postJson('/api/v1/admin/masuk', ['email' => 'x@y.z', 'password' => 'x'])->assertNotFound();
 
-        // Panel: menu Retur & Chatbot hilang untuk Owner, tetap ada untuk Super Admin (data tidak hilang).
+        // Panel: menu Retur & Chatbot hilang (datanya tetap di database).
         $this->actingAs($this->owner, 'admin');
         $this->assertFalse(ReturnRequestResource::canAccess());
         $this->assertFalse(ChatbotKontak::canAccess());
-        $this->actingAs($this->super, 'admin');
-        $this->assertTrue(ReturnRequestResource::canAccess());
 
         // Riwayat tercatat.
         $r = DB::table('riwayat_fitur')->first();
@@ -180,6 +178,11 @@ class FiturPaketTest extends TestCase
         $this->assertTrue($this->owner->fresh()->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN));
 
         $this->artisan('toko:super-admin', ['email' => 'baru@contoh.com'])->assertFailed();
+
+        // Cabut peran dari akun Owner; akunnya tetap ada & tetap Owner.
+        $this->artisan('toko:super-admin', ['email' => $this->owner->email, '--cabut' => true])->assertSuccessful();
+        $this->assertFalse($this->owner->fresh()->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN));
+        $this->assertTrue($this->owner->fresh()->hasRole('Owner'));
     }
 
     public function test_paket_1_toko_indonesia_saja_bahasa_rupiah_dan_pengiriman(): void
@@ -229,5 +232,25 @@ class FiturPaketTest extends TestCase
         $this->assertSame(['1 pesanan ke luar negeri belum selesai'], $alasan['kirim_luar_negeri']);
         $this->assertArrayNotHasKey('multi_bahasa', $alasan);
         $this->assertSame(3, Fitur::paket());
+    }
+
+    public function test_super_admin_tidak_bisa_masuk_ke_data_toko(): void
+    {
+        $this->actingAs($this->super, 'admin');
+
+        $this->get(\App\Filament\Resources\Products\ProductResource::getUrl())->assertForbidden();
+        $this->get(\App\Filament\Resources\Orders\OrderResource::getUrl())->assertForbidden();
+        $this->get(\App\Filament\Pages\PengaturanPembayaran::getUrl())->assertForbidden();
+        $this->get(\App\Filament\Pages\KontakNotifikasi::getUrl())->assertForbidden();
+        $this->get(FiturPaket::getUrl())->assertOk();
+
+        // Masuk ke /admin (dashboard) langsung diarahkan ke Fitur & paket, tanpa data penjualan.
+        $this->get('/admin')->assertRedirect(FiturPaket::getUrl());
+        $this->assertSame([], (new \App\Filament\Pages\Dashboard)->getWidgets());
+
+        // Owner tetap bisa semuanya kecuali Fitur & paket.
+        $this->actingAs($this->owner, 'admin');
+        $this->get(\App\Filament\Pages\Dashboard::getUrl())->assertOk();
+        $this->get(FiturPaket::getUrl())->assertForbidden();
     }
 }

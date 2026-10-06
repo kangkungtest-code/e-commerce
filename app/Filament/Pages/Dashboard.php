@@ -15,6 +15,32 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $title = 'Dashboard';
 
+    /**
+     * Laporan toko hanya untuk orang toko. Super Admin (tanpa izin laporan.lihat) yang membuka
+     * /admin langsung diarahkan ke halaman Fitur & paket; widget penjualan tidak dimuat.
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return self::bolehLihatLaporan();
+    }
+
+    private static function bolehLihatLaporan(): bool
+    {
+        return (bool) \Filament\Facades\Filament::auth()->user()?->hasPermissionTo('laporan.lihat');
+    }
+
+    public function mount(): void
+    {
+        if (! self::bolehLihatLaporan()) {
+            $this->redirect(FiturPaket::canAccess() ? FiturPaket::getUrl() : '/', navigate: false);
+        }
+    }
+
+    public function getWidgets(): array
+    {
+        return self::bolehLihatLaporan() ? parent::getWidgets() : [];
+    }
+
     public function filtersForm(Schema $schema): Schema
     {
         return $schema->components([

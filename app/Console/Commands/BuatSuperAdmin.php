@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
  */
 class BuatSuperAdmin extends Command
 {
-    protected $signature = 'toko:super-admin {email : Email akun Super Admin}';
+    protected $signature = 'toko:super-admin {email : Email akun Super Admin} {--cabut : Cabut peran Super Admin dari akun ini (akunnya tidak dihapus)}';
 
     protected $description = 'Buat atau perbarui akun Super Admin (pengatur fitur & paket)';
 
@@ -28,6 +28,18 @@ class BuatSuperAdmin extends Command
         }
 
         $this->callSilently('db:seed', ['--class' => RoleAndPermissionSeeder::class, '--force' => true]);
+
+        if ($this->option('cabut')) {
+            $user = User::query()->where('email', $email)->first();
+            if ($user?->hasRole(RoleAndPermissionSeeder::SUPER_ADMIN)) {
+                $user->removeRole(RoleAndPermissionSeeder::SUPER_ADMIN);
+                $this->info("Peran Super Admin dicabut dari {$email}.");
+            } else {
+                $this->info("{$email} bukan Super Admin.");
+            }
+
+            return self::SUCCESS;
+        }
 
         $password = (string) env('SUPERADMIN_PASSWORD', '');
         $user = User::query()->where('email', $email)->first();
