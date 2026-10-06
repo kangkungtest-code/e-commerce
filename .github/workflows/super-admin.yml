@@ -5,7 +5,7 @@ name: Super Admin
 # akun Owner toko dibuat Super Admin lewat panel (Pengaturan → Akun Owner).
 # Password dipakai untuk akun baru / mengganti password akun yang sudah ada.
 # Jalan otomatis kalau file ini berubah di claude-dev. Ubah SUPER_REV untuk mengulang.
-# SUPER_REV: 3
+# SUPER_REV: 4
 
 on:
   push:
@@ -34,9 +34,9 @@ jobs:
           envs: TOKO_SA_EMAIL,TOKO_SA_PASSWORD
           script: |
             cd /var/www/dev
-            # Tunggu deploy tarik memasang kode yang punya opsi --murni (maks ±12 menit).
+            # Tunggu deploy tarik selesai memasang commit ini (kode + migrasi), maks ±12 menit.
             for i in $(seq 1 48); do
-              php artisan help toko:super-admin 2>/dev/null | grep -q -- '--murni' && break
+              head -1 public/deploy-status.txt 2>/dev/null | grep -q "^${{ github.sha }} berhasil" && break
               sleep 15
             done
             if SUPERADMIN_PASSWORD="$TOKO_SA_PASSWORD" php artisan toko:super-admin "$TOKO_SA_EMAIL" --murni > /tmp/super-admin.log 2>&1; then
