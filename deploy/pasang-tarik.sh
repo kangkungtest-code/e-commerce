@@ -3,8 +3,10 @@
 #   curl -fsSL https://raw.githubusercontent.com/kangkungtest-code/e-commerce/claude-dev/deploy/pasang-tarik.sh | bash
 set -euo pipefail
 
-SALINAN="/var/www/.toko-tarik.sh"
-curl -fsSL "https://raw.githubusercontent.com/kangkungtest-code/e-commerce/claude-dev/deploy/tarik.sh" -o "$SALINAN.baru"
+SALINAN="$HOME/.toko-tarik.sh"
+# REF boleh berisi SHA commit supaya tidak kena cache raw.githubusercontent (±5 menit).
+REF="${REF:-claude-dev}"
+curl -fsSL "https://raw.githubusercontent.com/kangkungtest-code/e-commerce/${REF}/deploy/tarik.sh" -o "$SALINAN.baru"
 mv "$SALINAN.baru" "$SALINAN"
 chmod 755 "$SALINAN"
 

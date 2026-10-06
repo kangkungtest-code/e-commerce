@@ -1,0 +1,38 @@
+name: Pasang deploy tarik
+
+# Sekali jalan: memasang/memperbarui cron deploy tarik di server (deploy/pasang-tarik.sh).
+# Setelah ini GitHub tidak perlu SSH ke server untuk deploy (server yang menarik update).
+# Jalan otomatis kalau file ini berubah di claude-dev. Ubah PASANG_REV untuk mengulang.
+# PASANG_REV: 3
+
+on:
+  push:
+    branches: [claude-dev]
+    paths:
+      - .github/workflows/pasang-tarik.yml
+  workflow_dispatch:
+
+jobs:
+  pasang:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Pasang lewat SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || '22' }}
+          timeout: 60s
+          command_timeout: 12m
+          script: |
+            if ! curl -fsSL --max-time 30 https://raw.githubusercontent.com/kangkungtest-code/e-commerce/${{ github.sha }}/deploy/pasang-tarik.sh | REF=${{ github.sha }} bash > /tmp/pasang-tarik.log 2>&1; then
+              msg=$(tail -n 30 /tmp/pasang-tarik.log | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+              echo "::error title=Pasang gagal::${msg}"
+              exit 1
+            fi
+            echo "::notice title=Cron deploy tarik::$(crontab -l | grep -F toko-tarik)"
+            for d in /var/www/dev /var/www/fastandflux /var/www/demo; do
+              [ -f "$d/public/deploy-status.txt" ] && echo "::notice title=Status $d::$(head -1 "$d/public/deploy-status.txt")" || true
+            done

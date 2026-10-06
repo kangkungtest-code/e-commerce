@@ -1,0 +1,47 @@
+name: Cek SSH server
+
+# Tes ringan: apakah GitHub bisa SSH ke server (port 22 & 2222), dan apakah server bisa
+# keluar ke internet. Tidak mengubah apa pun di server.
+# Jalan otomatis kalau file ini berubah di claude-dev. Ubah CEK_REV untuk mengulang.
+# CEK_REV: 1
+
+on:
+  push:
+    branches: [claude-dev]
+    paths:
+      - .github/workflows/cek-ssh.yml
+  workflow_dispatch:
+
+jobs:
+  cek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        port: ["22", "2222"]
+    steps:
+      - name: SSH port ${{ matrix.port }}
+        id: ssh
+        continue-on-error: true
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ matrix.port }}
+          timeout: 60s
+          command_timeout: 2m
+          script: |
+            GH="$(curl -sS -m 10 -o /dev/null -w '%{http_code}' https://github.com 2>&1 || true)"
+            GG="$(curl -sS -m 10 -o /dev/null -w '%{http_code}' https://www.google.com 2>&1 || true)"
+            DNS="$(getent hosts github.com | head -1 || true)"
+            echo "::notice title=Server keluar ke internet (via port ${{ matrix.port }})::github=${GH} google=${GG} dns=[${DNS}]"
+
+      - name: Laporan
+        run: |
+          if [ "${{ steps.ssh.outcome }}" = "success" ]; then
+            echo "::notice title=SSH port ${{ matrix.port }}::BERHASIL tersambung dari GitHub"
+          else
+            echo "::warning title=SSH port ${{ matrix.port }}::GAGAL tersambung dari GitHub"
+          fi
