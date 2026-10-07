@@ -58,6 +58,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // Laporan lengkap (PDF di tab baru / unduh Excel). Cek fitur & izin di controller.
+            ->authenticatedRoutes(function () {
+                \Illuminate\Support\Facades\Route::get('laporan/pdf', [\App\Http\Controllers\Admin\LaporanController::class, 'pdf'])->name('laporan.pdf');
+                \Illuminate\Support\Facades\Route::get('laporan/excel', [\App\Http\Controllers\Admin\LaporanController::class, 'excel'])->name('laporan.excel');
+            });
     }
 }

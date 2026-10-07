@@ -25,7 +25,7 @@ return [
         'multi_mata_uang' => ['Multi-mata uang', 'Harga tampil dalam USD/TWD (kurs dikelola admin) selain Rupiah.', true],
         'kirim_luar_negeri' => ['Kirim ke luar negeri', 'Zona ongkir untuk negara selain Indonesia.', true],
         'aplikasi_mobile' => ['Aplikasi admin mobile', 'API aplikasi admin & notifikasi push ke HP.', true],
-        'laporan_lengkap' => ['Laporan lengkap', 'Ekspor laporan penjualan (Excel/CSV).', false],
+        'laporan_lengkap' => ['Laporan lengkap', 'Laporan penjualan periode sebagai PDF (lihat/cetak) & unduh Excel.', true],
         'staf' => ['Akun staf & peran', 'Owner bisa menambah karyawan dengan akses terbatas.', true],
     ],
 

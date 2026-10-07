@@ -109,10 +109,55 @@ class Laporan
         return $this->orderTerbayar()
             ->with(['payments' => fn ($q) => $q->whereIn('status', [\App\Models\Payment::BERHASIL, \App\Models\Payment::DIREFUND])])
             ->get(['id', 'total_idr'])
-            ->groupBy(fn (Order $o) => ($p = $o->payments->first())
-                ? \App\Payments\MetodePembayaran::label($p->gateway)
-                : 'Konfirmasi manual')
+            ->groupBy(fn (Order $o) => self::labelMetode($o))
             ->map(fn ($g) => (float) $g->sum('total_idr'))
             ->sortDesc();
+    }
+
+    /** @return Collection<string, int> status retur => jumlah pengajuan yang DIBUAT di periode ini */
+    public function statusRetur(): Collection
+    {
+        return \App\Models\ReturnRequest::query()
+            ->whereBetween('created_at', [$this->dari->copy()->utc(), $this->sampai->copy()->utc()])
+            ->get(['status'])
+            ->countBy('status');
+    }
+
+    /** Order terbayar di periode ini beserta pembeli & pembayaran, urut waktu bayar. */
+    public function daftarPesanan(): Collection
+    {
+        return $this->orderTerbayar()
+            ->with(['user', 'payments' => fn ($q) => $q->whereIn('status', [\App\Models\Payment::BERHASIL, \App\Models\Payment::DIREFUND])])
+            ->orderBy('dibayar_pada')
+            ->get();
+    }
+
+    /**
+     * Barang terjual per varian (order terbayar di periode ini), terbanyak dulu.
+     *
+     * @return Collection<int, array{produk: string, sku: string, varian: string, qty: int, omzet: float}>
+     */
+    public function barangTerjual(): Collection
+    {
+        return $this->itemTerbayar()
+            ->groupBy('variant_id')
+            ->map(function ($g) {
+                $v = $g->first()->variant;
+
+                return [
+                    'produk' => $v?->product?->getTranslation('nama_terjemahan', 'id') ?? 'Produk terhapus',
+                    'sku' => (string) ($v?->sku ?? '-'),
+                    'varian' => $v && $v->opsi ? collect($v->opsi)->map(fn ($n, $k) => is_string($k) ? "{$k}: {$n}" : $n)->implode(', ') : '-',
+                    'qty' => (int) $g->sum('qty'),
+                    'omzet' => (float) $g->sum(fn (OrderItem $i) => $i->qty * (float) $i->harga_saat_itu),
+                ];
+            })
+            ->sortByDesc('qty')
+            ->values();
+    }
+
+    public static function labelMetode(Order $o): string
+    {
+        return ($p = $o->payments->first()) ? \App\Payments\MetodePembayaran::label($p->gateway) : 'Konfirmasi manual';
     }
 }

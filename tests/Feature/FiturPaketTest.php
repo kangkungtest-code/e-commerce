@@ -61,7 +61,9 @@ class FiturPaketTest extends TestCase
         $this->assertSame(Fitur::siap(), Fitur::semuaAktif());
         $this->assertTrue(Fitur::aktif('chatbot'));
         $this->assertTrue(Fitur::aktif('katalog_apa_saja')); // bukan fitur bersaklar = inti
-        $this->assertFalse(in_array('laporan_lengkap', Fitur::semuaAktif(), true)); // belum dibangun
+        $this->assertTrue(Fitur::aktif('laporan_lengkap'));
+        config(['paket.fitur.contoh_belum_siap' => ['Contoh', 'Belum dibangun', false]]);
+        $this->assertFalse(Fitur::aktif('contoh_belum_siap')); // belum dibangun = tidak bisa menyala
     }
 
     public function test_hanya_super_admin_yang_bisa_mengatur(): void

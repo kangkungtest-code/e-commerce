@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Support\Fitur;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
@@ -39,6 +41,35 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return self::bolehLihatLaporan() ? parent::getWidgets() : [];
+    }
+
+    /**
+     * Fitur "Laporan lengkap": PDF dibuka di tab baru (bisa diunduh/dicetak dari penampil PDF
+     * browser) dan Excel diunduh. Periode diambil dari filter yang sedang dipakai saat diklik.
+     */
+    protected function getHeaderActions(): array
+    {
+        $tampil = fn () => self::bolehLihatLaporan() && Fitur::aktif('laporan_lengkap');
+        $buka = fn (string $rute, bool $tabBaru) => sprintf(
+            "const p = new URLSearchParams(); const f = \$wire.filters || {}; if (f.dari) p.set('dari', f.dari); if (f.sampai) p.set('sampai', f.sampai); %s('%s?' + p.toString()%s)",
+            $tabBaru ? 'window.open' : 'window.location.assign',
+            route($rute),
+            $tabBaru ? ", '_blank'" : '',
+        );
+
+        return [
+            Action::make('laporanPdf')
+                ->label('Lihat PDF')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->visible($tampil)
+                ->alpineClickHandler(fn () => $buka('filament.admin.laporan.pdf', true)),
+            Action::make('laporanExcel')
+                ->label('Unduh Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->visible($tampil)
+                ->alpineClickHandler(fn () => $buka('filament.admin.laporan.excel', false)),
+        ];
     }
 
     public function filtersForm(Schema $schema): Schema
